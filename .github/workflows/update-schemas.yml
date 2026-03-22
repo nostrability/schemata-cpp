@@ -1,0 +1,50 @@
+name: Update schemas
+
+on:
+  repository_dispatch:
+    types: [schema-update]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Schemata release tag (e.g. v0.2.6)'
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Resolve tag
+        id: tag
+        run: |
+          TAG="${{ github.event.client_payload.tag || github.event.inputs.tag || '' }}"
+          if [ -z "$TAG" ]; then
+            TAG=$(curl -sI https://github.com/nostrability/schemata/releases/latest | grep -i '^location:' | sed 's|.*/||' | tr -d '\r\n')
+          fi
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+      - name: Download and regenerate schemas
+        run: |
+          TAG="${{ steps.tag.outputs.tag }}"
+          curl -sL "https://github.com/nostrability/schemata/releases/download/${TAG}/schemata-${TAG}.zip" -o /tmp/schemata.zip
+          unzip -qo /tmp/schemata.zip -d /tmp/schemata-dist
+          grep -oP "export \{ default as (\w+) \} from '([^']+)'" /tmp/schemata-dist/bundle/schemas.js | \
+            sed "s/export { default as //" | sed "s/ } from '/\t/" | sed "s/'//" > /tmp/registry.tsv
+          python3 scripts/generate_schemas_data.py /tmp/registry.tsv /tmp/schemata-dist include/schemata/schemas_data.hpp
+          echo "$TAG" > SCHEMATA_VERSION
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --staged --quiet; then
+            echo "No changes"
+          else
+            git commit -m "chore: update schemas to ${{ steps.tag.outputs.tag }}"
+            git push
+          fi
