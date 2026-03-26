@@ -5031,7 +5031,7 @@ inline const std::unordered_map<std::string, std::string>& raw_schemas() {
                       {
                         \"type\": \"array\",
                         \"minItems\": 2,
-                        \"maxItems\": 3,
+                        \"maxItems\": 2,
                         \"items\": [
                           {
                             \"const\": \"k\"
@@ -5039,17 +5039,14 @@ inline const std::unordered_map<std::string, std::string>& raw_schemas() {
                           {
                             \"type\": \"string\",
                             \"minLength\": 1,
-                            \"pattern\": \"^[A-Za-z0-9][A-Za-z0-9._+-]*(?::[A-Za-z0-9][A-Za-z0-9._+-]*)*$\",
-                            \"description\": \"Type identifier for the external resource\"
-                          },
-                          {
-                            \"type\": \"string\",
-                            \"minLength\": 1,
-                            \"description\": \"Optional subtype or hint for the external resource\"
+                            \"pattern\": \"^(#|[A-Za-z0-9][A-Za-z0-9._+-]*(?::[A-Za-z0-9][A-Za-z0-9._+-]*)*)$\",
+                            \"description\": \"Type identifier for the external resource (e.g. isbn, geo, podcast:guid,\"
                           }
                         ],
+                        \"additionalItems\": false,
                         \"errorMessage\": {
-                          \"minItems\": \"k tag must be ['k', <type>, ...]\"
+                          \"minItems\": \"k tag must be ['k', <type>]\",
+                          \"maxItems\": \"k tag must be exactly ['k', <type>]\"
                         }
                       }
                     ]
@@ -8988,44 +8985,39 @@ inline const std::unordered_map<std::string, std::string>& raw_schemas() {
           \"allOf\": [
             {
               \"contains\": {
+                \"$schema\": \"http://json-schema.org/draft-07/schema#\",
                 \"allOf\": [
                   {
                     \"$schema\": \"http://json-schema.org/draft-07/schema#\",
-                    \"allOf\": [
+                    \"type\": \"array\",
+                    \"items\": {
+                      \"type\": \"string\"
+                    },
+                    \"uniqueItems\": false
+                  },
+                  {
+                    \"type\": \"array\",
+                    \"description\": \"Label tag (NIP-32). Applies a label within a namespace.\",
+                    \"minItems\": 3,
+                    \"items\": [
                       {
-                        \"allOf\": [
-                          {
-                            \"$schema\": \"http://json-schema.org/draft-07/schema#\",
-                            \"type\": \"array\",
-                            \"items\": {
-                              \"type\": \"string\"
-                            },
-                            \"uniqueItems\": false
-                          }
-                        ]
+                        \"const\": \"l\"
                       },
                       {
-                        \"type\": \"array\",
-                        \"description\": \"Label tag (NIP-32). Second element is label value; optional third element 'mark' matches an 'L' tag in the same event.\",
-                        \"minItems\": 2,
-                        \"items\": [
-                          {
-                            \"const\": \"l\"
-                          },
-                          {
-                            \"type\": \"string\",
-                            \"title\": \"label\",
-                            \"description\": \"A short, meaningful label string.\"
-                          },
-                          {
-                            \"type\": \"string\",
-                            \"title\": \"mark\",
-                            \"description\": \"Optional namespace mark; SHOULD match an 'L' tag value in the same event if present.\"
-                          }
-                        ],
-                        \"additionalItems\": false
+                        \"type\": \"string\",
+                        \"minLength\": 1,
+                        \"description\": \"Label value\"
+                      },
+                      {
+                        \"type\": \"string\",
+                        \"minLength\": 1,
+                        \"description\": \"Label namespace\"
                       }
-                    ]
+                    ],
+                    \"additionalItems\": false,
+                    \"errorMessage\": {
+                      \"minItems\": \"l tag must have at least 3 elements\"
+                    }
                   }
                 ]
               },
@@ -9224,15 +9216,29 @@ inline const std::unordered_map<std::string, std::string>& raw_schemas() {
                           {
                             \"type\": \"array\",
                             \"minItems\": 2,
+                            \"maxItems\": 3,
                             \"items\": [
                               {
                                 \"const\": \"r\"
                               },
                               {
-                                \"type\": \"string\"
+                                \"type\": \"string\",
+                                \"pattern\": \"^(ws://|wss://).+$\",
+                                \"description\": \"Relay URL\"
+                              },
+                              {
+                                \"type\": \"string\",
+                                \"enum\": [
+                                  \"read\",
+                                  \"write\"
+                                ],
+                                \"description\": \"Optional read/write marker\"
                               }
                             ],
-                            \"additionalItems\": true
+                            \"additionalItems\": false,
+                            \"errorMessage\": {
+                              \"minItems\": \"r tag must have at least 2 elements\"
+                            }
                           }
                         ]
                       }
@@ -9753,6 +9759,891 @@ inline const std::unordered_map<std::string, std::string>& raw_schemas() {
     }
   ],
   \"$id\": \"https://nostrability.github.io/schemata/note/kind/1617.json\"
+}"},
+        {"kind1618Schema", "{
+  \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+  \"title\": \"kind1618\",
+  \"description\": \"NIP-34 pull request event\",
+  \"allOf\": [
+    {
+      \"allOf\": [
+        {
+          \"$schema\": \"http://json-schema.org/draft-07/schema\",
+          \"type\": \"object\",
+          \"properties\": {
+            \"content\": {
+              \"type\": \"string\",
+              \"errorMessage\": \"content must be a string\",
+              \"description\": \"The content of the note\"
+            },
+            \"created_at\": {
+              \"type\": \"integer\",
+              \"errorMessage\": \"created_at must be a timestamp expressed in seconds (not milliseconds)\",
+              \"description\": \"The timestamp of the note creation\"
+            },
+            \"id\": {
+              \"allOf\": [
+                {
+                  \"allOf\": [
+                    {
+                      \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                      \"type\": \"string\",
+                      \"pattern\": \"^[a-f0-9]{64}$\"
+                    }
+                  ]
+                }
+              ],
+              \"errorMessage\": \"id must be a valid hash\",
+              \"description\": \"The id is a hash derived as specified in NIP-01\"
+            },
+            \"kind\": {
+              \"type\": \"integer\"
+            },
+            \"pubkey\": {
+              \"allOf\": [
+                {
+                  \"allOf\": [
+                    {
+                      \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                      \"type\": \"string\",
+                      \"pattern\": \"^[a-f0-9]{64}$\"
+                    }
+                  ]
+                }
+              ],
+              \"errorMessage\": \"pubkey must be a secp256k1 public key\",
+              \"description\": \"The public key of the note's author\"
+            },
+            \"sig\": {
+              \"type\": \"string\",
+              \"pattern\": \"^[a-f0-9]{128}$\",
+              \"errorMessage\": \"sig must be 128 lowercase hex characters (64 bytes)\",
+              \"description\": \"The cryptographic signature of the note\"
+            },
+            \"tags\": {
+              \"type\": \"array\",
+              \"errorMessage\": \"tags must be an array of valid tag tuples\",
+              \"description\": \"The tags of the note\",
+              \"items\": {
+                \"allOf\": [
+                  {
+                    \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                    \"type\": \"array\",
+                    \"items\": {
+                      \"type\": \"string\"
+                    },
+                    \"uniqueItems\": false
+                  }
+                ]
+              }
+            }
+          },
+          \"required\": [
+            \"content\",
+            \"created_at\",
+            \"id\",
+            \"kind\",
+            \"pubkey\",
+            \"sig\",
+            \"tags\"
+          ],
+          \"additionalProperties\": false
+        }
+      ]
+    },
+    {
+      \"type\": \"object\",
+      \"properties\": {
+        \"kind\": {
+          \"const\": 1618,
+          \"errorMessage\": \"kind must equal 1618\"
+        },
+        \"tags\": {
+          \"type\": \"array\",
+          \"items\": {
+            \"allOf\": [
+              {
+                \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                \"type\": \"array\",
+                \"items\": {
+                  \"type\": \"string\"
+                },
+                \"uniqueItems\": false
+              }
+            ]
+          },
+          \"minItems\": 1,
+          \"allOf\": [
+            {
+              \"contains\": {
+                \"allOf\": [
+                  {
+                    \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                    \"allOf\": [
+                      {
+                        \"allOf\": [
+                          {
+                            \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                            \"type\": \"array\",
+                            \"items\": {
+                              \"type\": \"string\"
+                            },
+                            \"uniqueItems\": false
+                          }
+                        ]
+                      },
+                      {
+                        \"type\": \"array\",
+                        \"minItems\": 2,
+                        \"items\": [
+                          {
+                            \"const\": \"a\"
+                          },
+                          {
+                            \"type\": \"string\",
+                            \"pattern\": \"^\\\\d+:[a-f0-9]{64}:.+$\"
+                          },
+                          {
+                            \"type\": \"string\",
+                            \"pattern\": \"^(ws://|wss://).+$\"
+                          }
+                        ],
+                        \"additionalItems\": true
+                      }
+                    ]
+                  }
+                ]
+              },
+              \"errorMessage\": {
+                \"contains\": \"tags must include an a tag referencing the target repository\"
+              }
+            },
+            {
+              \"contains\": {
+                \"allOf\": [
+                  {
+                    \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                    \"allOf\": [
+                      {
+                        \"allOf\": [
+                          {
+                            \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                            \"type\": \"array\",
+                            \"items\": {
+                              \"type\": \"string\"
+                            },
+                            \"uniqueItems\": false
+                          }
+                        ]
+                      },
+                      {
+                        \"type\": \"array\",
+                        \"minItems\": 2,
+                        \"items\": [
+                          {
+                            \"const\": \"p\"
+                          },
+                          {
+                            \"allOf\": [
+                              {
+                                \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                                \"type\": \"string\",
+                                \"pattern\": \"^[a-f0-9]{64}$\"
+                              }
+                            ]
+                          },
+                          {
+                            \"title\": \"petname\",
+                            \"type\": \"string\"
+                          }
+                        ],
+                        \"additionalItems\": false
+                      }
+                    ]
+                  }
+                ]
+              },
+              \"errorMessage\": {
+                \"contains\": \"tags must include a p tag for the repository owner\"
+              }
+            },
+            {
+              \"contains\": {
+                \"allOf\": [
+                  {
+                    \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                    \"allOf\": [
+                      {
+                        \"allOf\": [
+                          {
+                            \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                            \"type\": \"array\",
+                            \"items\": {
+                              \"type\": \"string\"
+                            },
+                            \"uniqueItems\": false
+                          }
+                        ]
+                      },
+                      {
+                        \"type\": \"array\",
+                        \"description\": \"Conversation subject for a private room\",
+                        \"minItems\": 2,
+                        \"items\": [
+                          {
+                            \"const\": \"subject\"
+                          },
+                          {
+                            \"type\": \"string\",
+                            \"minLength\": 1
+                          }
+                        ],
+                        \"additionalItems\": false
+                      }
+                    ]
+                  }
+                ]
+              },
+              \"errorMessage\": {
+                \"contains\": \"tags must include a subject tag with the PR title\"
+              }
+            },
+            {
+              \"contains\": {
+                \"allOf\": [
+                  {
+                    \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                    \"allOf\": [
+                      {
+                        \"allOf\": [
+                          {
+                            \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                            \"type\": \"array\",
+                            \"items\": {
+                              \"type\": \"string\"
+                            },
+                            \"uniqueItems\": false
+                          }
+                        ]
+                      },
+                      {
+                        \"type\": \"array\",
+                        \"minItems\": 2,
+                        \"maxItems\": 2,
+                        \"items\": [
+                          {
+                            \"const\": \"c\"
+                          },
+                          {
+                            \"type\": \"string\",
+                            \"pattern\": \"^[a-f0-9]{40}$\",
+                            \"description\": \"Git commit hash (40 hex chars)\"
+                          }
+                        ],
+                        \"additionalItems\": false,
+                        \"errorMessage\": {
+                          \"minItems\": \"c tag must have at least 2 elements\"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              \"errorMessage\": {
+                \"contains\": \"tags must include a c tag with the tip commit hash\"
+              }
+            },
+            {
+              \"contains\": {
+                \"allOf\": [
+                  {
+                    \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                    \"allOf\": [
+                      {
+                        \"allOf\": [
+                          {
+                            \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                            \"type\": \"array\",
+                            \"items\": {
+                              \"type\": \"string\"
+                            },
+                            \"uniqueItems\": false
+                          }
+                        ]
+                      },
+                      {
+                        \"type\": \"array\",
+                        \"description\": \"Git clone endpoints\",
+                        \"minItems\": 2,
+                        \"items\": [
+                          {
+                            \"const\": \"clone\"
+                          },
+                          {
+                            \"type\": \"string\",
+                            \"pattern\": \"^(([a-z][a-z0-9+\\\\.-]*://)|git@)[^\\\\s]+$\"
+                          }
+                        ],
+                        \"additionalItems\": {
+                          \"type\": \"string\",
+                          \"pattern\": \"^(([a-z][a-z0-9+\\\\.-]*://)|git@)[^\\\\s]+$\"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              \"errorMessage\": {
+                \"contains\": \"tags must include a clone tag with at least one clone URL\"
+              }
+            },
+            {
+              \"if\": {
+                \"contains\": {
+                  \"type\": \"array\",
+                  \"items\": [
+                    {
+                      \"const\": \"merge-base\"
+                    }
+                  ]
+                }
+              },
+              \"then\": {
+                \"contains\": {
+                  \"allOf\": [
+                    {
+                      \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                      \"allOf\": [
+                        {
+                          \"allOf\": [
+                            {
+                              \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                              \"type\": \"array\",
+                              \"items\": {
+                                \"type\": \"string\"
+                              },
+                              \"uniqueItems\": false
+                            }
+                          ]
+                        },
+                        {
+                          \"type\": \"array\",
+                          \"minItems\": 2,
+                          \"maxItems\": 2,
+                          \"items\": [
+                            {
+                              \"const\": \"merge-base\"
+                            },
+                            {
+                              \"type\": \"string\",
+                              \"pattern\": \"^[a-f0-9]{40}$\",
+                              \"description\": \"Most recent common ancestor commit hash\"
+                            }
+                          ],
+                          \"additionalItems\": false,
+                          \"errorMessage\": {
+                            \"minItems\": \"merge-base tag must have at least 2 elements\"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              \"if\": {
+                \"contains\": {
+                  \"type\": \"array\",
+                  \"items\": [
+                    {
+                      \"const\": \"branch-name\"
+                    }
+                  ]
+                }
+              },
+              \"then\": {
+                \"contains\": {
+                  \"allOf\": [
+                    {
+                      \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                      \"allOf\": [
+                        {
+                          \"allOf\": [
+                            {
+                              \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                              \"type\": \"array\",
+                              \"items\": {
+                                \"type\": \"string\"
+                              },
+                              \"uniqueItems\": false
+                            }
+                          ]
+                        },
+                        {
+                          \"type\": \"array\",
+                          \"minItems\": 2,
+                          \"maxItems\": 2,
+                          \"items\": [
+                            {
+                              \"const\": \"branch-name\"
+                            },
+                            {
+                              \"type\": \"string\",
+                              \"minLength\": 1,
+                              \"description\": \"Recommended branch name for the pull request\"
+                            }
+                          ],
+                          \"additionalItems\": false,
+                          \"errorMessage\": {
+                            \"minItems\": \"branch-name tag must have at least 2 elements\"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      },
+      \"required\": [
+        \"kind\",
+        \"tags\"
+      ]
+    }
+  ],
+  \"$id\": \"https://nostrability.github.io/schemata/note/kind/1618.json\"
+}"},
+        {"kind1619Schema", "{
+  \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+  \"title\": \"kind1619\",
+  \"description\": \"NIP-34 pull request update event\",
+  \"allOf\": [
+    {
+      \"allOf\": [
+        {
+          \"$schema\": \"http://json-schema.org/draft-07/schema\",
+          \"type\": \"object\",
+          \"properties\": {
+            \"content\": {
+              \"type\": \"string\",
+              \"errorMessage\": \"content must be a string\",
+              \"description\": \"The content of the note\"
+            },
+            \"created_at\": {
+              \"type\": \"integer\",
+              \"errorMessage\": \"created_at must be a timestamp expressed in seconds (not milliseconds)\",
+              \"description\": \"The timestamp of the note creation\"
+            },
+            \"id\": {
+              \"allOf\": [
+                {
+                  \"allOf\": [
+                    {
+                      \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                      \"type\": \"string\",
+                      \"pattern\": \"^[a-f0-9]{64}$\"
+                    }
+                  ]
+                }
+              ],
+              \"errorMessage\": \"id must be a valid hash\",
+              \"description\": \"The id is a hash derived as specified in NIP-01\"
+            },
+            \"kind\": {
+              \"type\": \"integer\"
+            },
+            \"pubkey\": {
+              \"allOf\": [
+                {
+                  \"allOf\": [
+                    {
+                      \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                      \"type\": \"string\",
+                      \"pattern\": \"^[a-f0-9]{64}$\"
+                    }
+                  ]
+                }
+              ],
+              \"errorMessage\": \"pubkey must be a secp256k1 public key\",
+              \"description\": \"The public key of the note's author\"
+            },
+            \"sig\": {
+              \"type\": \"string\",
+              \"pattern\": \"^[a-f0-9]{128}$\",
+              \"errorMessage\": \"sig must be 128 lowercase hex characters (64 bytes)\",
+              \"description\": \"The cryptographic signature of the note\"
+            },
+            \"tags\": {
+              \"type\": \"array\",
+              \"errorMessage\": \"tags must be an array of valid tag tuples\",
+              \"description\": \"The tags of the note\",
+              \"items\": {
+                \"allOf\": [
+                  {
+                    \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                    \"type\": \"array\",
+                    \"items\": {
+                      \"type\": \"string\"
+                    },
+                    \"uniqueItems\": false
+                  }
+                ]
+              }
+            }
+          },
+          \"required\": [
+            \"content\",
+            \"created_at\",
+            \"id\",
+            \"kind\",
+            \"pubkey\",
+            \"sig\",
+            \"tags\"
+          ],
+          \"additionalProperties\": false
+        }
+      ]
+    },
+    {
+      \"type\": \"object\",
+      \"properties\": {
+        \"kind\": {
+          \"const\": 1619,
+          \"errorMessage\": \"kind must equal 1619\"
+        },
+        \"tags\": {
+          \"type\": \"array\",
+          \"items\": {
+            \"allOf\": [
+              {
+                \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                \"type\": \"array\",
+                \"items\": {
+                  \"type\": \"string\"
+                },
+                \"uniqueItems\": false
+              }
+            ]
+          },
+          \"minItems\": 1,
+          \"allOf\": [
+            {
+              \"contains\": {
+                \"allOf\": [
+                  {
+                    \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                    \"allOf\": [
+                      {
+                        \"allOf\": [
+                          {
+                            \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                            \"type\": \"array\",
+                            \"items\": {
+                              \"type\": \"string\"
+                            },
+                            \"uniqueItems\": false
+                          }
+                        ]
+                      },
+                      {
+                        \"type\": \"array\",
+                        \"minItems\": 2,
+                        \"items\": [
+                          {
+                            \"const\": \"a\"
+                          },
+                          {
+                            \"type\": \"string\",
+                            \"pattern\": \"^\\\\d+:[a-f0-9]{64}:.+$\"
+                          },
+                          {
+                            \"type\": \"string\",
+                            \"pattern\": \"^(ws://|wss://).+$\"
+                          }
+                        ],
+                        \"additionalItems\": true
+                      }
+                    ]
+                  }
+                ]
+              },
+              \"errorMessage\": {
+                \"contains\": \"tags must include an a tag referencing the target repository\"
+              }
+            },
+            {
+              \"contains\": {
+                \"allOf\": [
+                  {
+                    \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                    \"allOf\": [
+                      {
+                        \"allOf\": [
+                          {
+                            \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                            \"type\": \"array\",
+                            \"items\": {
+                              \"type\": \"string\"
+                            },
+                            \"uniqueItems\": false
+                          }
+                        ]
+                      },
+                      {
+                        \"type\": \"array\",
+                        \"minItems\": 2,
+                        \"items\": [
+                          {
+                            \"const\": \"p\"
+                          },
+                          {
+                            \"allOf\": [
+                              {
+                                \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                                \"type\": \"string\",
+                                \"pattern\": \"^[a-f0-9]{64}$\"
+                              }
+                            ]
+                          },
+                          {
+                            \"title\": \"petname\",
+                            \"type\": \"string\"
+                          }
+                        ],
+                        \"additionalItems\": false
+                      }
+                    ]
+                  }
+                ]
+              },
+              \"errorMessage\": {
+                \"contains\": \"tags must include a p tag for the repository owner\"
+              }
+            },
+            {
+              \"contains\": {
+                \"allOf\": [
+                  {
+                    \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                    \"allOf\": [
+                      {
+                        \"allOf\": [
+                          {
+                            \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                            \"type\": \"array\",
+                            \"items\": {
+                              \"type\": \"string\"
+                            },
+                            \"uniqueItems\": false
+                          }
+                        ]
+                      },
+                      {
+                        \"type\": \"array\",
+                        \"minItems\": 2,
+                        \"maxItems\": 2,
+                        \"items\": [
+                          {
+                            \"const\": \"c\"
+                          },
+                          {
+                            \"type\": \"string\",
+                            \"pattern\": \"^[a-f0-9]{40}$\",
+                            \"description\": \"Git commit hash (40 hex chars)\"
+                          }
+                        ],
+                        \"additionalItems\": false,
+                        \"errorMessage\": {
+                          \"minItems\": \"c tag must have at least 2 elements\"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              \"errorMessage\": {
+                \"contains\": \"tags must include a c tag with the updated tip commit hash\"
+              }
+            },
+            {
+              \"contains\": {
+                \"allOf\": [
+                  {
+                    \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                    \"allOf\": [
+                      {
+                        \"allOf\": [
+                          {
+                            \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                            \"type\": \"array\",
+                            \"items\": {
+                              \"type\": \"string\"
+                            },
+                            \"uniqueItems\": false
+                          }
+                        ]
+                      },
+                      {
+                        \"type\": \"array\",
+                        \"description\": \"Git clone endpoints\",
+                        \"minItems\": 2,
+                        \"items\": [
+                          {
+                            \"const\": \"clone\"
+                          },
+                          {
+                            \"type\": \"string\",
+                            \"pattern\": \"^(([a-z][a-z0-9+\\\\.-]*://)|git@)[^\\\\s]+$\"
+                          }
+                        ],
+                        \"additionalItems\": {
+                          \"type\": \"string\",
+                          \"pattern\": \"^(([a-z][a-z0-9+\\\\.-]*://)|git@)[^\\\\s]+$\"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              \"errorMessage\": {
+                \"contains\": \"tags must include a clone tag with at least one clone URL\"
+              }
+            },
+            {
+              \"contains\": {
+                \"allOf\": [
+                  {
+                    \"allOf\": [
+                      {
+                        \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                        \"type\": \"array\",
+                        \"items\": {
+                          \"type\": \"string\"
+                        },
+                        \"uniqueItems\": false
+                      }
+                    ]
+                  },
+                  {
+                    \"type\": \"array\",
+                    \"minItems\": 2,
+                    \"items\": [
+                      {
+                        \"const\": \"E\"
+                      },
+                      {
+                        \"type\": \"string\",
+                        \"pattern\": \"^[a-f0-9]{64}$\"
+                      }
+                    ]
+                  }
+                ]
+              },
+              \"errorMessage\": {
+                \"contains\": \"tags must include an E tag referencing the pull request event\"
+              }
+            },
+            {
+              \"contains\": {
+                \"allOf\": [
+                  {
+                    \"allOf\": [
+                      {
+                        \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                        \"type\": \"array\",
+                        \"items\": {
+                          \"type\": \"string\"
+                        },
+                        \"uniqueItems\": false
+                      }
+                    ]
+                  },
+                  {
+                    \"type\": \"array\",
+                    \"minItems\": 2,
+                    \"items\": [
+                      {
+                        \"const\": \"P\"
+                      },
+                      {
+                        \"type\": \"string\",
+                        \"pattern\": \"^[a-f0-9]{64}$\"
+                      }
+                    ]
+                  }
+                ]
+              },
+              \"errorMessage\": {
+                \"contains\": \"tags must include a P tag referencing the pull request author\"
+              }
+            },
+            {
+              \"if\": {
+                \"contains\": {
+                  \"type\": \"array\",
+                  \"items\": [
+                    {
+                      \"const\": \"merge-base\"
+                    }
+                  ]
+                }
+              },
+              \"then\": {
+                \"contains\": {
+                  \"allOf\": [
+                    {
+                      \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                      \"allOf\": [
+                        {
+                          \"allOf\": [
+                            {
+                              \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                              \"type\": \"array\",
+                              \"items\": {
+                                \"type\": \"string\"
+                              },
+                              \"uniqueItems\": false
+                            }
+                          ]
+                        },
+                        {
+                          \"type\": \"array\",
+                          \"minItems\": 2,
+                          \"maxItems\": 2,
+                          \"items\": [
+                            {
+                              \"const\": \"merge-base\"
+                            },
+                            {
+                              \"type\": \"string\",
+                              \"pattern\": \"^[a-f0-9]{40}$\",
+                              \"description\": \"Most recent common ancestor commit hash\"
+                            }
+                          ],
+                          \"additionalItems\": false,
+                          \"errorMessage\": {
+                            \"minItems\": \"merge-base tag must have at least 2 elements\"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      },
+      \"required\": [
+        \"kind\",
+        \"tags\"
+      ]
+    }
+  ],
+  \"$id\": \"https://nostrability.github.io/schemata/note/kind/1619.json\"
 }"},
         {"kind1621Schema", "{
   \"$schema\": \"http://json-schema.org/draft-07/schema#\",
@@ -12294,6 +13185,80 @@ inline const std::unordered_map<std::string, std::string>& raw_schemas() {
   ],
   \"$id\": \"https://nostrability.github.io/schemata/tag/applied-as-commits.json\"
 }"},
+        {"branchnameTagSchema", "{
+  \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+  \"allOf\": [
+    {
+      \"allOf\": [
+        {
+          \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+          \"type\": \"array\",
+          \"items\": {
+            \"type\": \"string\"
+          },
+          \"uniqueItems\": false
+        }
+      ]
+    },
+    {
+      \"type\": \"array\",
+      \"minItems\": 2,
+      \"maxItems\": 2,
+      \"items\": [
+        {
+          \"const\": \"branch-name\"
+        },
+        {
+          \"type\": \"string\",
+          \"minLength\": 1,
+          \"description\": \"Recommended branch name for the pull request\"
+        }
+      ],
+      \"additionalItems\": false,
+      \"errorMessage\": {
+        \"minItems\": \"branch-name tag must have at least 2 elements\"
+      }
+    }
+  ],
+  \"$id\": \"https://nostrability.github.io/schemata/tag/branch-name.json\"
+}"},
+        {"cTagSchema", "{
+  \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+  \"allOf\": [
+    {
+      \"allOf\": [
+        {
+          \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+          \"type\": \"array\",
+          \"items\": {
+            \"type\": \"string\"
+          },
+          \"uniqueItems\": false
+        }
+      ]
+    },
+    {
+      \"type\": \"array\",
+      \"minItems\": 2,
+      \"maxItems\": 2,
+      \"items\": [
+        {
+          \"const\": \"c\"
+        },
+        {
+          \"type\": \"string\",
+          \"pattern\": \"^[a-f0-9]{40}$\",
+          \"description\": \"Git commit hash (40 hex chars)\"
+        }
+      ],
+      \"additionalItems\": false,
+      \"errorMessage\": {
+        \"minItems\": \"c tag must have at least 2 elements\"
+      }
+    }
+  ],
+  \"$id\": \"https://nostrability.github.io/schemata/tag/c.json\"
+}"},
         {"cloneTagSchema", "{
   \"$schema\": \"http://json-schema.org/draft-07/schema#\",
   \"allOf\": [
@@ -12617,6 +13582,43 @@ inline const std::unordered_map<std::string, std::string>& raw_schemas() {
     }
   ],
   \"$id\": \"https://nostrability.github.io/schemata/tag/maintainers.json\"
+}"},
+        {"mergebaseTagSchema", "{
+  \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+  \"allOf\": [
+    {
+      \"allOf\": [
+        {
+          \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+          \"type\": \"array\",
+          \"items\": {
+            \"type\": \"string\"
+          },
+          \"uniqueItems\": false
+        }
+      ]
+    },
+    {
+      \"type\": \"array\",
+      \"minItems\": 2,
+      \"maxItems\": 2,
+      \"items\": [
+        {
+          \"const\": \"merge-base\"
+        },
+        {
+          \"type\": \"string\",
+          \"pattern\": \"^[a-f0-9]{40}$\",
+          \"description\": \"Most recent common ancestor commit hash\"
+        }
+      ],
+      \"additionalItems\": false,
+      \"errorMessage\": {
+        \"minItems\": \"merge-base tag must have at least 2 elements\"
+      }
+    }
+  ],
+  \"$id\": \"https://nostrability.github.io/schemata/tag/merge-base.json\"
 }"},
         {"mergecommitTagSchema", "{
   \"$schema\": \"http://json-schema.org/draft-07/schema#\",
@@ -14510,6 +15512,1367 @@ inline const std::unordered_map<std::string, std::string>& raw_schemas() {
     }
   ],
   \"$id\": \"https://nostrability.github.io/schemata/tag/challenge.json\"
+}"},
+        {"kind13534Schema", "{
+  \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+  \"title\": \"kind13534\",
+  \"description\": \"NIP-43 Membership List event (relay access management)\",
+  \"allOf\": [
+    {
+      \"allOf\": [
+        {
+          \"$schema\": \"http://json-schema.org/draft-07/schema\",
+          \"type\": \"object\",
+          \"properties\": {
+            \"content\": {
+              \"type\": \"string\",
+              \"errorMessage\": \"content must be a string\",
+              \"description\": \"The content of the note\"
+            },
+            \"created_at\": {
+              \"type\": \"integer\",
+              \"errorMessage\": \"created_at must be a timestamp expressed in seconds (not milliseconds)\",
+              \"description\": \"The timestamp of the note creation\"
+            },
+            \"id\": {
+              \"allOf\": [
+                {
+                  \"allOf\": [
+                    {
+                      \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                      \"type\": \"string\",
+                      \"pattern\": \"^[a-f0-9]{64}$\"
+                    }
+                  ]
+                }
+              ],
+              \"errorMessage\": \"id must be a valid hash\",
+              \"description\": \"The id is a hash derived as specified in NIP-01\"
+            },
+            \"kind\": {
+              \"type\": \"integer\"
+            },
+            \"pubkey\": {
+              \"allOf\": [
+                {
+                  \"allOf\": [
+                    {
+                      \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                      \"type\": \"string\",
+                      \"pattern\": \"^[a-f0-9]{64}$\"
+                    }
+                  ]
+                }
+              ],
+              \"errorMessage\": \"pubkey must be a secp256k1 public key\",
+              \"description\": \"The public key of the note's author\"
+            },
+            \"sig\": {
+              \"type\": \"string\",
+              \"pattern\": \"^[a-f0-9]{128}$\",
+              \"errorMessage\": \"sig must be 128 lowercase hex characters (64 bytes)\",
+              \"description\": \"The cryptographic signature of the note\"
+            },
+            \"tags\": {
+              \"type\": \"array\",
+              \"errorMessage\": \"tags must be an array of valid tag tuples\",
+              \"description\": \"The tags of the note\",
+              \"items\": {
+                \"allOf\": [
+                  {
+                    \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                    \"type\": \"array\",
+                    \"items\": {
+                      \"type\": \"string\"
+                    },
+                    \"uniqueItems\": false
+                  }
+                ]
+              }
+            }
+          },
+          \"required\": [
+            \"content\",
+            \"created_at\",
+            \"id\",
+            \"kind\",
+            \"pubkey\",
+            \"sig\",
+            \"tags\"
+          ],
+          \"additionalProperties\": false
+        }
+      ]
+    },
+    {
+      \"type\": \"object\",
+      \"properties\": {
+        \"kind\": {
+          \"const\": 13534,
+          \"errorMessage\": \"kind must equal 13534\"
+        },
+        \"tags\": {
+          \"type\": \"array\",
+          \"items\": {
+            \"allOf\": [
+              {
+                \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                \"type\": \"array\",
+                \"items\": {
+                  \"type\": \"string\"
+                },
+                \"uniqueItems\": false
+              }
+            ]
+          },
+          \"minItems\": 1,
+          \"allOf\": [
+            {
+              \"contains\": {
+                \"allOf\": [
+                  {
+                    \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                    \"title\": \"protectedTag\",
+                    \"description\": \"Protected event tag (\\\"-\\\"). The tag name is a single dash character, indicating the event is only meant to be consumed by the relay it was published to.\",
+                    \"allOf\": [
+                      {
+                        \"allOf\": [
+                          {
+                            \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                            \"type\": \"array\",
+                            \"items\": {
+                              \"type\": \"string\"
+                            },
+                            \"uniqueItems\": false
+                          }
+                        ]
+                      },
+                      {
+                        \"type\": \"array\",
+                        \"minItems\": 1,
+                        \"maxItems\": 1,
+                        \"items\": [
+                          {
+                            \"const\": \"-\"
+                          }
+                        ],
+                        \"additionalItems\": false,
+                        \"errorMessage\": {
+                          \"minItems\": \"protected tag must have at least 1 element\"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              \"errorMessage\": {
+                \"contains\": \"tags must include a protected event tag ([\\\"-\\\"])\"
+              }
+            },
+            {
+              \"contains\": {
+                \"allOf\": [
+                  {
+                    \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                    \"allOf\": [
+                      {
+                        \"allOf\": [
+                          {
+                            \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                            \"type\": \"array\",
+                            \"items\": {
+                              \"type\": \"string\"
+                            },
+                            \"uniqueItems\": false
+                          }
+                        ]
+                      },
+                      {
+                        \"type\": \"array\",
+                        \"minItems\": 2,
+                        \"maxItems\": 2,
+                        \"items\": [
+                          {
+                            \"const\": \"member\"
+                          },
+                          {
+                            \"allOf\": [
+                              {
+                                \"allOf\": [
+                                  {
+                                    \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                                    \"type\": \"string\",
+                                    \"pattern\": \"^[a-f0-9]{64}$\"
+                                  }
+                                ]
+                              }
+                            ],
+                            \"description\": \"Hex-encoded pubkey of the member\"
+                          }
+                        ],
+                        \"additionalItems\": false,
+                        \"errorMessage\": {
+                          \"minItems\": \"member tag must have at least 2 elements\"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              \"errorMessage\": {
+                \"contains\": \"tags must include at least one member tag with a hex pubkey\"
+              }
+            }
+          ]
+        }
+      },
+      \"required\": [
+        \"kind\",
+        \"tags\"
+      ]
+    }
+  ],
+  \"$id\": \"https://nostrability.github.io/schemata/note/kind/13534.json\"
+}"},
+        {"kind28934Schema", "{
+  \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+  \"title\": \"kind28934\",
+  \"description\": \"NIP-43 Join Request event (relay access management)\",
+  \"allOf\": [
+    {
+      \"allOf\": [
+        {
+          \"$schema\": \"http://json-schema.org/draft-07/schema\",
+          \"type\": \"object\",
+          \"properties\": {
+            \"content\": {
+              \"type\": \"string\",
+              \"errorMessage\": \"content must be a string\",
+              \"description\": \"The content of the note\"
+            },
+            \"created_at\": {
+              \"type\": \"integer\",
+              \"errorMessage\": \"created_at must be a timestamp expressed in seconds (not milliseconds)\",
+              \"description\": \"The timestamp of the note creation\"
+            },
+            \"id\": {
+              \"allOf\": [
+                {
+                  \"allOf\": [
+                    {
+                      \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                      \"type\": \"string\",
+                      \"pattern\": \"^[a-f0-9]{64}$\"
+                    }
+                  ]
+                }
+              ],
+              \"errorMessage\": \"id must be a valid hash\",
+              \"description\": \"The id is a hash derived as specified in NIP-01\"
+            },
+            \"kind\": {
+              \"type\": \"integer\"
+            },
+            \"pubkey\": {
+              \"allOf\": [
+                {
+                  \"allOf\": [
+                    {
+                      \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                      \"type\": \"string\",
+                      \"pattern\": \"^[a-f0-9]{64}$\"
+                    }
+                  ]
+                }
+              ],
+              \"errorMessage\": \"pubkey must be a secp256k1 public key\",
+              \"description\": \"The public key of the note's author\"
+            },
+            \"sig\": {
+              \"type\": \"string\",
+              \"pattern\": \"^[a-f0-9]{128}$\",
+              \"errorMessage\": \"sig must be 128 lowercase hex characters (64 bytes)\",
+              \"description\": \"The cryptographic signature of the note\"
+            },
+            \"tags\": {
+              \"type\": \"array\",
+              \"errorMessage\": \"tags must be an array of valid tag tuples\",
+              \"description\": \"The tags of the note\",
+              \"items\": {
+                \"allOf\": [
+                  {
+                    \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                    \"type\": \"array\",
+                    \"items\": {
+                      \"type\": \"string\"
+                    },
+                    \"uniqueItems\": false
+                  }
+                ]
+              }
+            }
+          },
+          \"required\": [
+            \"content\",
+            \"created_at\",
+            \"id\",
+            \"kind\",
+            \"pubkey\",
+            \"sig\",
+            \"tags\"
+          ],
+          \"additionalProperties\": false
+        }
+      ]
+    },
+    {
+      \"type\": \"object\",
+      \"properties\": {
+        \"kind\": {
+          \"const\": 28934,
+          \"errorMessage\": \"kind must equal 28934\"
+        },
+        \"tags\": {
+          \"type\": \"array\",
+          \"items\": {
+            \"allOf\": [
+              {
+                \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                \"type\": \"array\",
+                \"items\": {
+                  \"type\": \"string\"
+                },
+                \"uniqueItems\": false
+              }
+            ]
+          },
+          \"minItems\": 1,
+          \"allOf\": [
+            {
+              \"contains\": {
+                \"allOf\": [
+                  {
+                    \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                    \"title\": \"protectedTag\",
+                    \"description\": \"Protected event tag (\\\"-\\\"). The tag name is a single dash character, indicating the event is only meant to be consumed by the relay it was published to.\",
+                    \"allOf\": [
+                      {
+                        \"allOf\": [
+                          {
+                            \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                            \"type\": \"array\",
+                            \"items\": {
+                              \"type\": \"string\"
+                            },
+                            \"uniqueItems\": false
+                          }
+                        ]
+                      },
+                      {
+                        \"type\": \"array\",
+                        \"minItems\": 1,
+                        \"maxItems\": 1,
+                        \"items\": [
+                          {
+                            \"const\": \"-\"
+                          }
+                        ],
+                        \"additionalItems\": false,
+                        \"errorMessage\": {
+                          \"minItems\": \"protected tag must have at least 1 element\"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              \"errorMessage\": {
+                \"contains\": \"tags must include a protected event tag ([\\\"-\\\"])\"
+              }
+            },
+            {
+              \"contains\": {
+                \"allOf\": [
+                  {
+                    \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                    \"allOf\": [
+                      {
+                        \"allOf\": [
+                          {
+                            \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                            \"type\": \"array\",
+                            \"items\": {
+                              \"type\": \"string\"
+                            },
+                            \"uniqueItems\": false
+                          }
+                        ]
+                      },
+                      {
+                        \"type\": \"array\",
+                        \"minItems\": 2,
+                        \"maxItems\": 2,
+                        \"items\": [
+                          {
+                            \"const\": \"claim\"
+                          },
+                          {
+                            \"type\": \"string\",
+                            \"minLength\": 1,
+                            \"description\": \"Invite code string\"
+                          }
+                        ],
+                        \"additionalItems\": false,
+                        \"errorMessage\": {
+                          \"minItems\": \"claim tag must have at least 2 elements\"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              \"errorMessage\": {
+                \"contains\": \"tags must include a claim tag with an invite code\"
+              }
+            }
+          ]
+        }
+      },
+      \"required\": [
+        \"kind\",
+        \"tags\"
+      ]
+    }
+  ],
+  \"$id\": \"https://nostrability.github.io/schemata/note/kind/28934.json\"
+}"},
+        {"kind28935Schema", "{
+  \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+  \"title\": \"kind28935\",
+  \"description\": \"NIP-43 Invite Request response event (relay access management)\",
+  \"allOf\": [
+    {
+      \"allOf\": [
+        {
+          \"$schema\": \"http://json-schema.org/draft-07/schema\",
+          \"type\": \"object\",
+          \"properties\": {
+            \"content\": {
+              \"type\": \"string\",
+              \"errorMessage\": \"content must be a string\",
+              \"description\": \"The content of the note\"
+            },
+            \"created_at\": {
+              \"type\": \"integer\",
+              \"errorMessage\": \"created_at must be a timestamp expressed in seconds (not milliseconds)\",
+              \"description\": \"The timestamp of the note creation\"
+            },
+            \"id\": {
+              \"allOf\": [
+                {
+                  \"allOf\": [
+                    {
+                      \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                      \"type\": \"string\",
+                      \"pattern\": \"^[a-f0-9]{64}$\"
+                    }
+                  ]
+                }
+              ],
+              \"errorMessage\": \"id must be a valid hash\",
+              \"description\": \"The id is a hash derived as specified in NIP-01\"
+            },
+            \"kind\": {
+              \"type\": \"integer\"
+            },
+            \"pubkey\": {
+              \"allOf\": [
+                {
+                  \"allOf\": [
+                    {
+                      \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                      \"type\": \"string\",
+                      \"pattern\": \"^[a-f0-9]{64}$\"
+                    }
+                  ]
+                }
+              ],
+              \"errorMessage\": \"pubkey must be a secp256k1 public key\",
+              \"description\": \"The public key of the note's author\"
+            },
+            \"sig\": {
+              \"type\": \"string\",
+              \"pattern\": \"^[a-f0-9]{128}$\",
+              \"errorMessage\": \"sig must be 128 lowercase hex characters (64 bytes)\",
+              \"description\": \"The cryptographic signature of the note\"
+            },
+            \"tags\": {
+              \"type\": \"array\",
+              \"errorMessage\": \"tags must be an array of valid tag tuples\",
+              \"description\": \"The tags of the note\",
+              \"items\": {
+                \"allOf\": [
+                  {
+                    \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                    \"type\": \"array\",
+                    \"items\": {
+                      \"type\": \"string\"
+                    },
+                    \"uniqueItems\": false
+                  }
+                ]
+              }
+            }
+          },
+          \"required\": [
+            \"content\",
+            \"created_at\",
+            \"id\",
+            \"kind\",
+            \"pubkey\",
+            \"sig\",
+            \"tags\"
+          ],
+          \"additionalProperties\": false
+        }
+      ]
+    },
+    {
+      \"type\": \"object\",
+      \"properties\": {
+        \"kind\": {
+          \"const\": 28935,
+          \"errorMessage\": \"kind must equal 28935\"
+        },
+        \"tags\": {
+          \"type\": \"array\",
+          \"items\": {
+            \"allOf\": [
+              {
+                \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                \"type\": \"array\",
+                \"items\": {
+                  \"type\": \"string\"
+                },
+                \"uniqueItems\": false
+              }
+            ]
+          },
+          \"minItems\": 1,
+          \"allOf\": [
+            {
+              \"contains\": {
+                \"allOf\": [
+                  {
+                    \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                    \"title\": \"protectedTag\",
+                    \"description\": \"Protected event tag (\\\"-\\\"). The tag name is a single dash character, indicating the event is only meant to be consumed by the relay it was published to.\",
+                    \"allOf\": [
+                      {
+                        \"allOf\": [
+                          {
+                            \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                            \"type\": \"array\",
+                            \"items\": {
+                              \"type\": \"string\"
+                            },
+                            \"uniqueItems\": false
+                          }
+                        ]
+                      },
+                      {
+                        \"type\": \"array\",
+                        \"minItems\": 1,
+                        \"maxItems\": 1,
+                        \"items\": [
+                          {
+                            \"const\": \"-\"
+                          }
+                        ],
+                        \"additionalItems\": false,
+                        \"errorMessage\": {
+                          \"minItems\": \"protected tag must have at least 1 element\"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              \"errorMessage\": {
+                \"contains\": \"tags must include a protected event tag ([\\\"-\\\"])\"
+              }
+            },
+            {
+              \"contains\": {
+                \"allOf\": [
+                  {
+                    \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                    \"allOf\": [
+                      {
+                        \"allOf\": [
+                          {
+                            \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                            \"type\": \"array\",
+                            \"items\": {
+                              \"type\": \"string\"
+                            },
+                            \"uniqueItems\": false
+                          }
+                        ]
+                      },
+                      {
+                        \"type\": \"array\",
+                        \"minItems\": 2,
+                        \"maxItems\": 2,
+                        \"items\": [
+                          {
+                            \"const\": \"claim\"
+                          },
+                          {
+                            \"type\": \"string\",
+                            \"minLength\": 1,
+                            \"description\": \"Invite code string\"
+                          }
+                        ],
+                        \"additionalItems\": false,
+                        \"errorMessage\": {
+                          \"minItems\": \"claim tag must have at least 2 elements\"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              \"errorMessage\": {
+                \"contains\": \"tags must include a claim tag with a generated invite code\"
+              }
+            }
+          ]
+        }
+      },
+      \"required\": [
+        \"kind\",
+        \"tags\"
+      ]
+    }
+  ],
+  \"$id\": \"https://nostrability.github.io/schemata/note/kind/28935.json\"
+}"},
+        {"kind28936Schema", "{
+  \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+  \"title\": \"kind28936\",
+  \"description\": \"NIP-43 Leave Request event (relay access management)\",
+  \"allOf\": [
+    {
+      \"allOf\": [
+        {
+          \"$schema\": \"http://json-schema.org/draft-07/schema\",
+          \"type\": \"object\",
+          \"properties\": {
+            \"content\": {
+              \"type\": \"string\",
+              \"errorMessage\": \"content must be a string\",
+              \"description\": \"The content of the note\"
+            },
+            \"created_at\": {
+              \"type\": \"integer\",
+              \"errorMessage\": \"created_at must be a timestamp expressed in seconds (not milliseconds)\",
+              \"description\": \"The timestamp of the note creation\"
+            },
+            \"id\": {
+              \"allOf\": [
+                {
+                  \"allOf\": [
+                    {
+                      \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                      \"type\": \"string\",
+                      \"pattern\": \"^[a-f0-9]{64}$\"
+                    }
+                  ]
+                }
+              ],
+              \"errorMessage\": \"id must be a valid hash\",
+              \"description\": \"The id is a hash derived as specified in NIP-01\"
+            },
+            \"kind\": {
+              \"type\": \"integer\"
+            },
+            \"pubkey\": {
+              \"allOf\": [
+                {
+                  \"allOf\": [
+                    {
+                      \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                      \"type\": \"string\",
+                      \"pattern\": \"^[a-f0-9]{64}$\"
+                    }
+                  ]
+                }
+              ],
+              \"errorMessage\": \"pubkey must be a secp256k1 public key\",
+              \"description\": \"The public key of the note's author\"
+            },
+            \"sig\": {
+              \"type\": \"string\",
+              \"pattern\": \"^[a-f0-9]{128}$\",
+              \"errorMessage\": \"sig must be 128 lowercase hex characters (64 bytes)\",
+              \"description\": \"The cryptographic signature of the note\"
+            },
+            \"tags\": {
+              \"type\": \"array\",
+              \"errorMessage\": \"tags must be an array of valid tag tuples\",
+              \"description\": \"The tags of the note\",
+              \"items\": {
+                \"allOf\": [
+                  {
+                    \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                    \"type\": \"array\",
+                    \"items\": {
+                      \"type\": \"string\"
+                    },
+                    \"uniqueItems\": false
+                  }
+                ]
+              }
+            }
+          },
+          \"required\": [
+            \"content\",
+            \"created_at\",
+            \"id\",
+            \"kind\",
+            \"pubkey\",
+            \"sig\",
+            \"tags\"
+          ],
+          \"additionalProperties\": false
+        }
+      ]
+    },
+    {
+      \"type\": \"object\",
+      \"properties\": {
+        \"kind\": {
+          \"const\": 28936,
+          \"errorMessage\": \"kind must equal 28936\"
+        },
+        \"tags\": {
+          \"type\": \"array\",
+          \"items\": {
+            \"allOf\": [
+              {
+                \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                \"type\": \"array\",
+                \"items\": {
+                  \"type\": \"string\"
+                },
+                \"uniqueItems\": false
+              }
+            ]
+          },
+          \"minItems\": 1,
+          \"allOf\": [
+            {
+              \"contains\": {
+                \"allOf\": [
+                  {
+                    \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                    \"title\": \"protectedTag\",
+                    \"description\": \"Protected event tag (\\\"-\\\"). The tag name is a single dash character, indicating the event is only meant to be consumed by the relay it was published to.\",
+                    \"allOf\": [
+                      {
+                        \"allOf\": [
+                          {
+                            \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                            \"type\": \"array\",
+                            \"items\": {
+                              \"type\": \"string\"
+                            },
+                            \"uniqueItems\": false
+                          }
+                        ]
+                      },
+                      {
+                        \"type\": \"array\",
+                        \"minItems\": 1,
+                        \"maxItems\": 1,
+                        \"items\": [
+                          {
+                            \"const\": \"-\"
+                          }
+                        ],
+                        \"additionalItems\": false,
+                        \"errorMessage\": {
+                          \"minItems\": \"protected tag must have at least 1 element\"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              \"errorMessage\": {
+                \"contains\": \"tags must include a protected event tag ([\\\"-\\\"])\"
+              }
+            }
+          ]
+        }
+      },
+      \"required\": [
+        \"kind\",
+        \"tags\"
+      ]
+    }
+  ],
+  \"$id\": \"https://nostrability.github.io/schemata/note/kind/28936.json\"
+}"},
+        {"kind8000Schema", "{
+  \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+  \"title\": \"kind8000\",
+  \"description\": \"NIP-43 Add User event (relay access management)\",
+  \"allOf\": [
+    {
+      \"allOf\": [
+        {
+          \"$schema\": \"http://json-schema.org/draft-07/schema\",
+          \"type\": \"object\",
+          \"properties\": {
+            \"content\": {
+              \"type\": \"string\",
+              \"errorMessage\": \"content must be a string\",
+              \"description\": \"The content of the note\"
+            },
+            \"created_at\": {
+              \"type\": \"integer\",
+              \"errorMessage\": \"created_at must be a timestamp expressed in seconds (not milliseconds)\",
+              \"description\": \"The timestamp of the note creation\"
+            },
+            \"id\": {
+              \"allOf\": [
+                {
+                  \"allOf\": [
+                    {
+                      \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                      \"type\": \"string\",
+                      \"pattern\": \"^[a-f0-9]{64}$\"
+                    }
+                  ]
+                }
+              ],
+              \"errorMessage\": \"id must be a valid hash\",
+              \"description\": \"The id is a hash derived as specified in NIP-01\"
+            },
+            \"kind\": {
+              \"type\": \"integer\"
+            },
+            \"pubkey\": {
+              \"allOf\": [
+                {
+                  \"allOf\": [
+                    {
+                      \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                      \"type\": \"string\",
+                      \"pattern\": \"^[a-f0-9]{64}$\"
+                    }
+                  ]
+                }
+              ],
+              \"errorMessage\": \"pubkey must be a secp256k1 public key\",
+              \"description\": \"The public key of the note's author\"
+            },
+            \"sig\": {
+              \"type\": \"string\",
+              \"pattern\": \"^[a-f0-9]{128}$\",
+              \"errorMessage\": \"sig must be 128 lowercase hex characters (64 bytes)\",
+              \"description\": \"The cryptographic signature of the note\"
+            },
+            \"tags\": {
+              \"type\": \"array\",
+              \"errorMessage\": \"tags must be an array of valid tag tuples\",
+              \"description\": \"The tags of the note\",
+              \"items\": {
+                \"allOf\": [
+                  {
+                    \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                    \"type\": \"array\",
+                    \"items\": {
+                      \"type\": \"string\"
+                    },
+                    \"uniqueItems\": false
+                  }
+                ]
+              }
+            }
+          },
+          \"required\": [
+            \"content\",
+            \"created_at\",
+            \"id\",
+            \"kind\",
+            \"pubkey\",
+            \"sig\",
+            \"tags\"
+          ],
+          \"additionalProperties\": false
+        }
+      ]
+    },
+    {
+      \"type\": \"object\",
+      \"properties\": {
+        \"kind\": {
+          \"const\": 8000,
+          \"errorMessage\": \"kind must equal 8000\"
+        },
+        \"tags\": {
+          \"type\": \"array\",
+          \"items\": {
+            \"allOf\": [
+              {
+                \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                \"type\": \"array\",
+                \"items\": {
+                  \"type\": \"string\"
+                },
+                \"uniqueItems\": false
+              }
+            ]
+          },
+          \"minItems\": 1,
+          \"allOf\": [
+            {
+              \"contains\": {
+                \"allOf\": [
+                  {
+                    \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                    \"title\": \"protectedTag\",
+                    \"description\": \"Protected event tag (\\\"-\\\"). The tag name is a single dash character, indicating the event is only meant to be consumed by the relay it was published to.\",
+                    \"allOf\": [
+                      {
+                        \"allOf\": [
+                          {
+                            \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                            \"type\": \"array\",
+                            \"items\": {
+                              \"type\": \"string\"
+                            },
+                            \"uniqueItems\": false
+                          }
+                        ]
+                      },
+                      {
+                        \"type\": \"array\",
+                        \"minItems\": 1,
+                        \"maxItems\": 1,
+                        \"items\": [
+                          {
+                            \"const\": \"-\"
+                          }
+                        ],
+                        \"additionalItems\": false,
+                        \"errorMessage\": {
+                          \"minItems\": \"protected tag must have at least 1 element\"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              \"errorMessage\": {
+                \"contains\": \"tags must include a protected event tag ([\\\"-\\\"])\"
+              }
+            },
+            {
+              \"contains\": {
+                \"allOf\": [
+                  {
+                    \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                    \"allOf\": [
+                      {
+                        \"allOf\": [
+                          {
+                            \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                            \"type\": \"array\",
+                            \"items\": {
+                              \"type\": \"string\"
+                            },
+                            \"uniqueItems\": false
+                          }
+                        ]
+                      },
+                      {
+                        \"type\": \"array\",
+                        \"minItems\": 2,
+                        \"items\": [
+                          {
+                            \"const\": \"p\"
+                          },
+                          {
+                            \"allOf\": [
+                              {
+                                \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                                \"type\": \"string\",
+                                \"pattern\": \"^[a-f0-9]{64}$\"
+                              }
+                            ]
+                          },
+                          {
+                            \"title\": \"petname\",
+                            \"type\": \"string\"
+                          }
+                        ],
+                        \"additionalItems\": false
+                      }
+                    ]
+                  }
+                ]
+              },
+              \"errorMessage\": {
+                \"contains\": \"tags must include a p tag with the added member's pubkey\"
+              }
+            }
+          ]
+        }
+      },
+      \"required\": [
+        \"kind\",
+        \"tags\"
+      ]
+    }
+  ],
+  \"$id\": \"https://nostrability.github.io/schemata/note/kind/8000.json\"
+}"},
+        {"kind8001Schema", "{
+  \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+  \"title\": \"kind8001\",
+  \"description\": \"NIP-43 Remove User event (relay access management)\",
+  \"allOf\": [
+    {
+      \"allOf\": [
+        {
+          \"$schema\": \"http://json-schema.org/draft-07/schema\",
+          \"type\": \"object\",
+          \"properties\": {
+            \"content\": {
+              \"type\": \"string\",
+              \"errorMessage\": \"content must be a string\",
+              \"description\": \"The content of the note\"
+            },
+            \"created_at\": {
+              \"type\": \"integer\",
+              \"errorMessage\": \"created_at must be a timestamp expressed in seconds (not milliseconds)\",
+              \"description\": \"The timestamp of the note creation\"
+            },
+            \"id\": {
+              \"allOf\": [
+                {
+                  \"allOf\": [
+                    {
+                      \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                      \"type\": \"string\",
+                      \"pattern\": \"^[a-f0-9]{64}$\"
+                    }
+                  ]
+                }
+              ],
+              \"errorMessage\": \"id must be a valid hash\",
+              \"description\": \"The id is a hash derived as specified in NIP-01\"
+            },
+            \"kind\": {
+              \"type\": \"integer\"
+            },
+            \"pubkey\": {
+              \"allOf\": [
+                {
+                  \"allOf\": [
+                    {
+                      \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                      \"type\": \"string\",
+                      \"pattern\": \"^[a-f0-9]{64}$\"
+                    }
+                  ]
+                }
+              ],
+              \"errorMessage\": \"pubkey must be a secp256k1 public key\",
+              \"description\": \"The public key of the note's author\"
+            },
+            \"sig\": {
+              \"type\": \"string\",
+              \"pattern\": \"^[a-f0-9]{128}$\",
+              \"errorMessage\": \"sig must be 128 lowercase hex characters (64 bytes)\",
+              \"description\": \"The cryptographic signature of the note\"
+            },
+            \"tags\": {
+              \"type\": \"array\",
+              \"errorMessage\": \"tags must be an array of valid tag tuples\",
+              \"description\": \"The tags of the note\",
+              \"items\": {
+                \"allOf\": [
+                  {
+                    \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                    \"type\": \"array\",
+                    \"items\": {
+                      \"type\": \"string\"
+                    },
+                    \"uniqueItems\": false
+                  }
+                ]
+              }
+            }
+          },
+          \"required\": [
+            \"content\",
+            \"created_at\",
+            \"id\",
+            \"kind\",
+            \"pubkey\",
+            \"sig\",
+            \"tags\"
+          ],
+          \"additionalProperties\": false
+        }
+      ]
+    },
+    {
+      \"type\": \"object\",
+      \"properties\": {
+        \"kind\": {
+          \"const\": 8001,
+          \"errorMessage\": \"kind must equal 8001\"
+        },
+        \"tags\": {
+          \"type\": \"array\",
+          \"items\": {
+            \"allOf\": [
+              {
+                \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                \"type\": \"array\",
+                \"items\": {
+                  \"type\": \"string\"
+                },
+                \"uniqueItems\": false
+              }
+            ]
+          },
+          \"minItems\": 1,
+          \"allOf\": [
+            {
+              \"contains\": {
+                \"allOf\": [
+                  {
+                    \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                    \"title\": \"protectedTag\",
+                    \"description\": \"Protected event tag (\\\"-\\\"). The tag name is a single dash character, indicating the event is only meant to be consumed by the relay it was published to.\",
+                    \"allOf\": [
+                      {
+                        \"allOf\": [
+                          {
+                            \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                            \"type\": \"array\",
+                            \"items\": {
+                              \"type\": \"string\"
+                            },
+                            \"uniqueItems\": false
+                          }
+                        ]
+                      },
+                      {
+                        \"type\": \"array\",
+                        \"minItems\": 1,
+                        \"maxItems\": 1,
+                        \"items\": [
+                          {
+                            \"const\": \"-\"
+                          }
+                        ],
+                        \"additionalItems\": false,
+                        \"errorMessage\": {
+                          \"minItems\": \"protected tag must have at least 1 element\"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              \"errorMessage\": {
+                \"contains\": \"tags must include a protected event tag ([\\\"-\\\"])\"
+              }
+            },
+            {
+              \"contains\": {
+                \"allOf\": [
+                  {
+                    \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                    \"allOf\": [
+                      {
+                        \"allOf\": [
+                          {
+                            \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                            \"type\": \"array\",
+                            \"items\": {
+                              \"type\": \"string\"
+                            },
+                            \"uniqueItems\": false
+                          }
+                        ]
+                      },
+                      {
+                        \"type\": \"array\",
+                        \"minItems\": 2,
+                        \"items\": [
+                          {
+                            \"const\": \"p\"
+                          },
+                          {
+                            \"allOf\": [
+                              {
+                                \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                                \"type\": \"string\",
+                                \"pattern\": \"^[a-f0-9]{64}$\"
+                              }
+                            ]
+                          },
+                          {
+                            \"title\": \"petname\",
+                            \"type\": \"string\"
+                          }
+                        ],
+                        \"additionalItems\": false
+                      }
+                    ]
+                  }
+                ]
+              },
+              \"errorMessage\": {
+                \"contains\": \"tags must include a p tag with the removed member's pubkey\"
+              }
+            }
+          ]
+        }
+      },
+      \"required\": [
+        \"kind\",
+        \"tags\"
+      ]
+    }
+  ],
+  \"$id\": \"https://nostrability.github.io/schemata/note/kind/8001.json\"
+}"},
+        {"claimTagSchema", "{
+  \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+  \"allOf\": [
+    {
+      \"allOf\": [
+        {
+          \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+          \"type\": \"array\",
+          \"items\": {
+            \"type\": \"string\"
+          },
+          \"uniqueItems\": false
+        }
+      ]
+    },
+    {
+      \"type\": \"array\",
+      \"minItems\": 2,
+      \"maxItems\": 2,
+      \"items\": [
+        {
+          \"const\": \"claim\"
+        },
+        {
+          \"type\": \"string\",
+          \"minLength\": 1,
+          \"description\": \"Invite code string\"
+        }
+      ],
+      \"additionalItems\": false,
+      \"errorMessage\": {
+        \"minItems\": \"claim tag must have at least 2 elements\"
+      }
+    }
+  ],
+  \"$id\": \"https://nostrability.github.io/schemata/tag/claim.json\"
+}"},
+        {"memberTagSchema", "{
+  \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+  \"allOf\": [
+    {
+      \"allOf\": [
+        {
+          \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+          \"type\": \"array\",
+          \"items\": {
+            \"type\": \"string\"
+          },
+          \"uniqueItems\": false
+        }
+      ]
+    },
+    {
+      \"type\": \"array\",
+      \"minItems\": 2,
+      \"maxItems\": 2,
+      \"items\": [
+        {
+          \"const\": \"member\"
+        },
+        {
+          \"allOf\": [
+            {
+              \"allOf\": [
+                {
+                  \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                  \"type\": \"string\",
+                  \"pattern\": \"^[a-f0-9]{64}$\"
+                }
+              ]
+            }
+          ],
+          \"description\": \"Hex-encoded pubkey of the member\"
+        }
+      ],
+      \"additionalItems\": false,
+      \"errorMessage\": {
+        \"minItems\": \"member tag must have at least 2 elements\"
+      }
+    }
+  ],
+  \"$id\": \"https://nostrability.github.io/schemata/tag/member.json\"
+}"},
+        {"protectedTagSchema", "{
+  \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+  \"title\": \"protectedTag\",
+  \"description\": \"Protected event tag (\\\"-\\\"). The tag name is a single dash character, indicating the event is only meant to be consumed by the relay it was published to.\",
+  \"allOf\": [
+    {
+      \"allOf\": [
+        {
+          \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+          \"type\": \"array\",
+          \"items\": {
+            \"type\": \"string\"
+          },
+          \"uniqueItems\": false
+        }
+      ]
+    },
+    {
+      \"type\": \"array\",
+      \"minItems\": 1,
+      \"maxItems\": 1,
+      \"items\": [
+        {
+          \"const\": \"-\"
+        }
+      ],
+      \"additionalItems\": false,
+      \"errorMessage\": {
+        \"minItems\": \"protected tag must have at least 1 element\"
+      }
+    }
+  ],
+  \"$id\": \"https://nostrability.github.io/schemata/tag/protected.json\"
 }"},
         {"clientCountSchema", "{
   \"type\": \"array\",
@@ -22471,15 +24834,29 @@ inline const std::unordered_map<std::string, std::string>& raw_schemas() {
                         {
                           \"type\": \"array\",
                           \"minItems\": 2,
+                          \"maxItems\": 3,
                           \"items\": [
                             {
                               \"const\": \"r\"
                             },
                             {
-                              \"type\": \"string\"
+                              \"type\": \"string\",
+                              \"pattern\": \"^(ws://|wss://).+$\",
+                              \"description\": \"Relay URL\"
+                            },
+                            {
+                              \"type\": \"string\",
+                              \"enum\": [
+                                \"read\",
+                                \"write\"
+                              ],
+                              \"description\": \"Optional read/write marker\"
                             }
                           ],
-                          \"additionalItems\": true
+                          \"additionalItems\": false,
+                          \"errorMessage\": {
+                            \"minItems\": \"r tag must have at least 2 elements\"
+                          }
                         }
                       ]
                     }
@@ -22724,6 +25101,40 @@ inline const std::unordered_map<std::string, std::string>& raw_schemas() {
               },
               \"errorMessage\": {
                 \"contains\": \"tags must include a title tag\"
+              }
+            },
+            {
+              \"contains\": {
+                \"allOf\": [
+                  {
+                    \"allOf\": [
+                      {
+                        \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                        \"type\": \"array\",
+                        \"items\": {
+                          \"type\": \"string\"
+                        },
+                        \"uniqueItems\": false
+                      }
+                    ]
+                  },
+                  {
+                    \"type\": \"array\",
+                    \"minItems\": 2,
+                    \"items\": [
+                      {
+                        \"const\": \"D\"
+                      },
+                      {
+                        \"type\": \"string\",
+                        \"pattern\": \"^[0-9]+$\"
+                      }
+                    ]
+                  }
+                ]
+              },
+              \"errorMessage\": {
+                \"contains\": \"tags must include a D tag with a day-granularity unix timestamp\"
               }
             },
             {
@@ -23160,15 +25571,29 @@ inline const std::unordered_map<std::string, std::string>& raw_schemas() {
                         {
                           \"type\": \"array\",
                           \"minItems\": 2,
+                          \"maxItems\": 3,
                           \"items\": [
                             {
                               \"const\": \"r\"
                             },
                             {
-                              \"type\": \"string\"
+                              \"type\": \"string\",
+                              \"pattern\": \"^(ws://|wss://).+$\",
+                              \"description\": \"Relay URL\"
+                            },
+                            {
+                              \"type\": \"string\",
+                              \"enum\": [
+                                \"read\",
+                                \"write\"
+                              ],
+                              \"description\": \"Optional read/write marker\"
                             }
                           ],
-                          \"additionalItems\": true
+                          \"additionalItems\": false,
+                          \"errorMessage\": {
+                            \"minItems\": \"r tag must have at least 2 elements\"
+                          }
                         }
                       ]
                     }
@@ -23277,10 +25702,13 @@ inline const std::unordered_map<std::string, std::string>& raw_schemas() {
                             {
                               \"type\": \"string\",
                               \"description\": \"IANA Time Zone Database identifier\",
-                              \"pattern\": \"^[A-Za-z0-9_]+(?:\\\\/[A-Za-z0-9_+\\\\-]+)*$\"
+                              \"pattern\": \"^[A-Za-z0-9_\\\\-+]+(?:\\\\/[A-Za-z0-9_\\\\-+]+)*$\"
                             }
                           ],
-                          \"additionalItems\": false
+                          \"additionalItems\": false,
+                          \"errorMessage\": {
+                            \"minItems\": \"start_tzid tag must have at least 2 elements\"
+                          }
                         }
                       ]
                     }
@@ -24371,10 +26799,13 @@ inline const std::unordered_map<std::string, std::string>& raw_schemas() {
         {
           \"type\": \"string\",
           \"description\": \"IANA Time Zone Database identifier\",
-          \"pattern\": \"^[A-Za-z0-9_]+(?:\\\\/[A-Za-z0-9_+\\\\-]+)*$\"
+          \"pattern\": \"^[A-Za-z0-9_\\\\-+]+(?:\\\\/[A-Za-z0-9_\\\\-+]+)*$\"
         }
       ],
-      \"additionalItems\": false
+      \"additionalItems\": false,
+      \"errorMessage\": {
+        \"minItems\": \"start_tzid tag must have at least 2 elements\"
+      }
     }
   ],
   \"$id\": \"https://nostrability.github.io/schemata/tag/start_tzid.json\"
@@ -26361,6 +28792,480 @@ inline const std::unordered_map<std::string, std::string>& raw_schemas() {
   ],
   \"$id\": \"https://nostrability.github.io/schemata/note/kind/30818.json\"
 }"},
+        {"kind30819Schema", "{
+  \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+  \"title\": \"kind30819\",
+  \"description\": \"NIP-54 Wiki Redirect event\",
+  \"allOf\": [
+    {
+      \"allOf\": [
+        {
+          \"$schema\": \"http://json-schema.org/draft-07/schema\",
+          \"type\": \"object\",
+          \"properties\": {
+            \"content\": {
+              \"type\": \"string\",
+              \"errorMessage\": \"content must be a string\",
+              \"description\": \"The content of the note\"
+            },
+            \"created_at\": {
+              \"type\": \"integer\",
+              \"errorMessage\": \"created_at must be a timestamp expressed in seconds (not milliseconds)\",
+              \"description\": \"The timestamp of the note creation\"
+            },
+            \"id\": {
+              \"allOf\": [
+                {
+                  \"allOf\": [
+                    {
+                      \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                      \"type\": \"string\",
+                      \"pattern\": \"^[a-f0-9]{64}$\"
+                    }
+                  ]
+                }
+              ],
+              \"errorMessage\": \"id must be a valid hash\",
+              \"description\": \"The id is a hash derived as specified in NIP-01\"
+            },
+            \"kind\": {
+              \"type\": \"integer\"
+            },
+            \"pubkey\": {
+              \"allOf\": [
+                {
+                  \"allOf\": [
+                    {
+                      \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                      \"type\": \"string\",
+                      \"pattern\": \"^[a-f0-9]{64}$\"
+                    }
+                  ]
+                }
+              ],
+              \"errorMessage\": \"pubkey must be a secp256k1 public key\",
+              \"description\": \"The public key of the note's author\"
+            },
+            \"sig\": {
+              \"type\": \"string\",
+              \"pattern\": \"^[a-f0-9]{128}$\",
+              \"errorMessage\": \"sig must be 128 lowercase hex characters (64 bytes)\",
+              \"description\": \"The cryptographic signature of the note\"
+            },
+            \"tags\": {
+              \"type\": \"array\",
+              \"errorMessage\": \"tags must be an array of valid tag tuples\",
+              \"description\": \"The tags of the note\",
+              \"items\": {
+                \"allOf\": [
+                  {
+                    \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                    \"type\": \"array\",
+                    \"items\": {
+                      \"type\": \"string\"
+                    },
+                    \"uniqueItems\": false
+                  }
+                ]
+              }
+            }
+          },
+          \"required\": [
+            \"content\",
+            \"created_at\",
+            \"id\",
+            \"kind\",
+            \"pubkey\",
+            \"sig\",
+            \"tags\"
+          ],
+          \"additionalProperties\": false
+        }
+      ]
+    },
+    {
+      \"type\": \"object\",
+      \"properties\": {
+        \"kind\": {
+          \"const\": 30819,
+          \"errorMessage\": \"kind must equal 30819\"
+        },
+        \"content\": {
+          \"type\": \"string\",
+          \"maxLength\": 0,
+          \"description\": \"Content must be an empty string\",
+          \"errorMessage\": \"content must be an empty string\"
+        },
+        \"tags\": {
+          \"type\": \"array\",
+          \"items\": {
+            \"allOf\": [
+              {
+                \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                \"type\": \"array\",
+                \"items\": {
+                  \"type\": \"string\"
+                },
+                \"uniqueItems\": false
+              }
+            ]
+          },
+          \"minItems\": 1,
+          \"allOf\": [
+            {
+              \"contains\": {
+                \"allOf\": [
+                  {
+                    \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                    \"allOf\": [
+                      {
+                        \"allOf\": [
+                          {
+                            \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                            \"type\": \"array\",
+                            \"items\": {
+                              \"type\": \"string\"
+                            },
+                            \"uniqueItems\": false
+                          }
+                        ]
+                      },
+                      {
+                        \"type\": \"array\",
+                        \"minItems\": 2,
+                        \"items\": [
+                          {
+                            \"const\": \"d\"
+                          },
+                          {
+                            \"type\": \"string\"
+                          }
+                        ],
+                        \"additionalItems\": true
+                      }
+                    ]
+                  }
+                ]
+              },
+              \"errorMessage\": {
+                \"contains\": \"tags must include a d tag with the normalized source topic\"
+              }
+            },
+            {
+              \"contains\": {
+                \"allOf\": [
+                  {
+                    \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                    \"allOf\": [
+                      {
+                        \"allOf\": [
+                          {
+                            \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                            \"type\": \"array\",
+                            \"items\": {
+                              \"type\": \"string\"
+                            },
+                            \"uniqueItems\": false
+                          }
+                        ]
+                      },
+                      {
+                        \"type\": \"array\",
+                        \"minItems\": 2,
+                        \"items\": [
+                          {
+                            \"const\": \"a\"
+                          },
+                          {
+                            \"type\": \"string\",
+                            \"pattern\": \"^\\\\d+:[a-f0-9]{64}:.+$\"
+                          },
+                          {
+                            \"type\": \"string\",
+                            \"pattern\": \"^(ws://|wss://).+$\"
+                          }
+                        ],
+                        \"additionalItems\": true
+                      }
+                    ]
+                  }
+                ]
+              },
+              \"errorMessage\": {
+                \"contains\": \"tags must include an a tag referencing the target wiki article\"
+              }
+            }
+          ]
+        }
+      },
+      \"required\": [
+        \"kind\",
+        \"content\",
+        \"tags\"
+      ]
+    }
+  ],
+  \"$id\": \"https://nostrability.github.io/schemata/note/kind/30819.json\"
+}"},
+        {"kind818Schema", "{
+  \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+  \"title\": \"kind818\",
+  \"description\": \"NIP-54 Wiki Merge Request event\",
+  \"allOf\": [
+    {
+      \"allOf\": [
+        {
+          \"$schema\": \"http://json-schema.org/draft-07/schema\",
+          \"type\": \"object\",
+          \"properties\": {
+            \"content\": {
+              \"type\": \"string\",
+              \"errorMessage\": \"content must be a string\",
+              \"description\": \"The content of the note\"
+            },
+            \"created_at\": {
+              \"type\": \"integer\",
+              \"errorMessage\": \"created_at must be a timestamp expressed in seconds (not milliseconds)\",
+              \"description\": \"The timestamp of the note creation\"
+            },
+            \"id\": {
+              \"allOf\": [
+                {
+                  \"allOf\": [
+                    {
+                      \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                      \"type\": \"string\",
+                      \"pattern\": \"^[a-f0-9]{64}$\"
+                    }
+                  ]
+                }
+              ],
+              \"errorMessage\": \"id must be a valid hash\",
+              \"description\": \"The id is a hash derived as specified in NIP-01\"
+            },
+            \"kind\": {
+              \"type\": \"integer\"
+            },
+            \"pubkey\": {
+              \"allOf\": [
+                {
+                  \"allOf\": [
+                    {
+                      \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                      \"type\": \"string\",
+                      \"pattern\": \"^[a-f0-9]{64}$\"
+                    }
+                  ]
+                }
+              ],
+              \"errorMessage\": \"pubkey must be a secp256k1 public key\",
+              \"description\": \"The public key of the note's author\"
+            },
+            \"sig\": {
+              \"type\": \"string\",
+              \"pattern\": \"^[a-f0-9]{128}$\",
+              \"errorMessage\": \"sig must be 128 lowercase hex characters (64 bytes)\",
+              \"description\": \"The cryptographic signature of the note\"
+            },
+            \"tags\": {
+              \"type\": \"array\",
+              \"errorMessage\": \"tags must be an array of valid tag tuples\",
+              \"description\": \"The tags of the note\",
+              \"items\": {
+                \"allOf\": [
+                  {
+                    \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                    \"type\": \"array\",
+                    \"items\": {
+                      \"type\": \"string\"
+                    },
+                    \"uniqueItems\": false
+                  }
+                ]
+              }
+            }
+          },
+          \"required\": [
+            \"content\",
+            \"created_at\",
+            \"id\",
+            \"kind\",
+            \"pubkey\",
+            \"sig\",
+            \"tags\"
+          ],
+          \"additionalProperties\": false
+        }
+      ]
+    },
+    {
+      \"type\": \"object\",
+      \"properties\": {
+        \"kind\": {
+          \"const\": 818,
+          \"errorMessage\": \"kind must equal 818\"
+        },
+        \"tags\": {
+          \"type\": \"array\",
+          \"items\": {
+            \"allOf\": [
+              {
+                \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                \"type\": \"array\",
+                \"items\": {
+                  \"type\": \"string\"
+                },
+                \"uniqueItems\": false
+              }
+            ]
+          },
+          \"minItems\": 1,
+          \"allOf\": [
+            {
+              \"contains\": {
+                \"allOf\": [
+                  {
+                    \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                    \"allOf\": [
+                      {
+                        \"allOf\": [
+                          {
+                            \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                            \"type\": \"array\",
+                            \"items\": {
+                              \"type\": \"string\"
+                            },
+                            \"uniqueItems\": false
+                          }
+                        ]
+                      },
+                      {
+                        \"type\": \"array\",
+                        \"minItems\": 2,
+                        \"items\": [
+                          {
+                            \"const\": \"a\"
+                          },
+                          {
+                            \"type\": \"string\",
+                            \"pattern\": \"^\\\\d+:[a-f0-9]{64}:.+$\"
+                          },
+                          {
+                            \"type\": \"string\",
+                            \"pattern\": \"^(ws://|wss://).+$\"
+                          }
+                        ],
+                        \"additionalItems\": true
+                      }
+                    ]
+                  }
+                ]
+              },
+              \"errorMessage\": {
+                \"contains\": \"tags must include an a tag referencing the target wiki article\"
+              }
+            },
+            {
+              \"contains\": {
+                \"allOf\": [
+                  {
+                    \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                    \"allOf\": [
+                      {
+                        \"allOf\": [
+                          {
+                            \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                            \"type\": \"array\",
+                            \"items\": {
+                              \"type\": \"string\"
+                            },
+                            \"uniqueItems\": false
+                          }
+                        ]
+                      },
+                      {
+                        \"type\": \"array\",
+                        \"minItems\": 2,
+                        \"items\": [
+                          {
+                            \"const\": \"p\"
+                          },
+                          {
+                            \"allOf\": [
+                              {
+                                \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                                \"type\": \"string\",
+                                \"pattern\": \"^[a-f0-9]{64}$\"
+                              }
+                            ]
+                          },
+                          {
+                            \"title\": \"petname\",
+                            \"type\": \"string\"
+                          }
+                        ],
+                        \"additionalItems\": false
+                      }
+                    ]
+                  }
+                ]
+              },
+              \"errorMessage\": {
+                \"contains\": \"tags must include a p tag for the destination article owner\"
+              }
+            },
+            {
+              \"contains\": {
+                \"allOf\": [
+                  {
+                    \"allOf\": [
+                      {
+                        \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                        \"type\": \"array\",
+                        \"items\": {
+                          \"type\": \"string\"
+                        },
+                        \"uniqueItems\": false
+                      }
+                    ]
+                  },
+                  {
+                    \"type\": \"array\",
+                    \"minItems\": 4,
+                    \"items\": [
+                      {
+                        \"const\": \"e\"
+                      },
+                      {
+                        \"type\": \"string\",
+                        \"pattern\": \"^[a-f0-9]{64}$\"
+                      },
+                      {
+                        \"type\": \"string\"
+                      },
+                      {
+                        \"const\": \"source\"
+                      }
+                    ],
+                    \"additionalItems\": false
+                  }
+                ]
+              },
+              \"errorMessage\": {
+                \"contains\": \"tags must include an e tag with 'source' marker referencing the version to merge\"
+              }
+            }
+          ]
+        }
+      },
+      \"required\": [
+        \"kind\",
+        \"tags\"
+      ]
+    }
+  ],
+  \"$id\": \"https://nostrability.github.io/schemata/note/kind/818.json\"
+}"},
         {"kind1984Schema", "{
   \"$schema\": \"http://json-schema.org/draft-07/schema#\",
   \"title\": \"kind1984\",
@@ -28057,59 +30962,7 @@ inline const std::unordered_map<std::string, std::string>& raw_schemas() {
                 \"uniqueItems\": false
               }
             ]
-          },
-          \"minItems\": 1,
-          \"allOf\": [
-            {
-              \"contains\": {
-                \"allOf\": [
-                  {
-                    \"$schema\": \"http://json-schema.org/draft-07/schema#\",
-                    \"allOf\": [
-                      {
-                        \"allOf\": [
-                          {
-                            \"$schema\": \"http://json-schema.org/draft-07/schema#\",
-                            \"type\": \"array\",
-                            \"items\": {
-                              \"type\": \"string\"
-                            },
-                            \"uniqueItems\": false
-                          }
-                        ]
-                      },
-                      {
-                        \"type\": \"array\",
-                        \"minItems\": 2,
-                        \"items\": [
-                          {
-                            \"const\": \"p\"
-                          },
-                          {
-                            \"allOf\": [
-                              {
-                                \"$schema\": \"http://json-schema.org/draft-07/schema#\",
-                                \"type\": \"string\",
-                                \"pattern\": \"^[a-f0-9]{64}$\"
-                              }
-                            ]
-                          },
-                          {
-                            \"title\": \"petname\",
-                            \"type\": \"string\"
-                          }
-                        ],
-                        \"additionalItems\": false
-                      }
-                    ]
-                  }
-                ]
-              },
-              \"errorMessage\": {
-                \"contains\": \"tags must include a p tag\"
-              }
-            }
-          ]
+          }
         }
       },
       \"required\": [
@@ -28237,6 +31090,515 @@ inline const std::unordered_map<std::string, std::string>& raw_schemas() {
   ],
   \"$id\": \"https://nostrability.github.io/schemata/note/kind/13.json\"
 }"},
+        {"kind15128Schema", "{
+  \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+  \"title\": \"kind15128\",
+  \"description\": \"NIP-5A Root Site Manifest event\",
+  \"allOf\": [
+    {
+      \"allOf\": [
+        {
+          \"$schema\": \"http://json-schema.org/draft-07/schema\",
+          \"type\": \"object\",
+          \"properties\": {
+            \"content\": {
+              \"type\": \"string\",
+              \"errorMessage\": \"content must be a string\",
+              \"description\": \"The content of the note\"
+            },
+            \"created_at\": {
+              \"type\": \"integer\",
+              \"errorMessage\": \"created_at must be a timestamp expressed in seconds (not milliseconds)\",
+              \"description\": \"The timestamp of the note creation\"
+            },
+            \"id\": {
+              \"allOf\": [
+                {
+                  \"allOf\": [
+                    {
+                      \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                      \"type\": \"string\",
+                      \"pattern\": \"^[a-f0-9]{64}$\"
+                    }
+                  ]
+                }
+              ],
+              \"errorMessage\": \"id must be a valid hash\",
+              \"description\": \"The id is a hash derived as specified in NIP-01\"
+            },
+            \"kind\": {
+              \"type\": \"integer\"
+            },
+            \"pubkey\": {
+              \"allOf\": [
+                {
+                  \"allOf\": [
+                    {
+                      \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                      \"type\": \"string\",
+                      \"pattern\": \"^[a-f0-9]{64}$\"
+                    }
+                  ]
+                }
+              ],
+              \"errorMessage\": \"pubkey must be a secp256k1 public key\",
+              \"description\": \"The public key of the note's author\"
+            },
+            \"sig\": {
+              \"type\": \"string\",
+              \"pattern\": \"^[a-f0-9]{128}$\",
+              \"errorMessage\": \"sig must be 128 lowercase hex characters (64 bytes)\",
+              \"description\": \"The cryptographic signature of the note\"
+            },
+            \"tags\": {
+              \"type\": \"array\",
+              \"errorMessage\": \"tags must be an array of valid tag tuples\",
+              \"description\": \"The tags of the note\",
+              \"items\": {
+                \"allOf\": [
+                  {
+                    \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                    \"type\": \"array\",
+                    \"items\": {
+                      \"type\": \"string\"
+                    },
+                    \"uniqueItems\": false
+                  }
+                ]
+              }
+            }
+          },
+          \"required\": [
+            \"content\",
+            \"created_at\",
+            \"id\",
+            \"kind\",
+            \"pubkey\",
+            \"sig\",
+            \"tags\"
+          ],
+          \"additionalProperties\": false
+        }
+      ]
+    },
+    {
+      \"type\": \"object\",
+      \"properties\": {
+        \"kind\": {
+          \"const\": 15128,
+          \"errorMessage\": \"kind must equal 15128\"
+        },
+        \"content\": {
+          \"type\": \"string\",
+          \"maxLength\": 0,
+          \"description\": \"Content must be empty\"
+        },
+        \"tags\": {
+          \"type\": \"array\",
+          \"items\": {
+            \"allOf\": [
+              {
+                \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                \"type\": \"array\",
+                \"items\": {
+                  \"type\": \"string\"
+                },
+                \"uniqueItems\": false
+              }
+            ]
+          },
+          \"minItems\": 1,
+          \"allOf\": [
+            {
+              \"contains\": {
+                \"allOf\": [
+                  {
+                    \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                    \"allOf\": [
+                      {
+                        \"allOf\": [
+                          {
+                            \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                            \"type\": \"array\",
+                            \"items\": {
+                              \"type\": \"string\"
+                            },
+                            \"uniqueItems\": false
+                          }
+                        ]
+                      },
+                      {
+                        \"type\": \"array\",
+                        \"minItems\": 3,
+                        \"maxItems\": 3,
+                        \"items\": [
+                          {
+                            \"const\": \"path\"
+                          },
+                          {
+                            \"type\": \"string\",
+                            \"pattern\": \"^/.+\",
+                            \"description\": \"Absolute path ending with a filename and extension\"
+                          },
+                          {
+                            \"type\": \"string\",
+                            \"pattern\": \"^[a-f0-9]{64}$\",
+                            \"description\": \"SHA-256 hash of the file served at this path\"
+                          }
+                        ],
+                        \"additionalItems\": false,
+                        \"errorMessage\": {
+                          \"minItems\": \"path tag must have at least 3 elements\"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              \"errorMessage\": {
+                \"contains\": \"tags must include at least one path tag\"
+              }
+            },
+            {
+              \"not\": {
+                \"contains\": {
+                  \"allOf\": [
+                    {
+                      \"allOf\": [
+                        {
+                          \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                          \"type\": \"array\",
+                          \"items\": {
+                            \"type\": \"string\"
+                          },
+                          \"uniqueItems\": false
+                        }
+                      ]
+                    },
+                    {
+                      \"type\": \"array\",
+                      \"items\": [
+                        {
+                          \"const\": \"d\"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              \"errorMessage\": {
+                \"not\": \"root site manifest must not include a d tag\"
+              }
+            }
+          ]
+        }
+      },
+      \"required\": [
+        \"kind\",
+        \"tags\"
+      ]
+    }
+  ],
+  \"$id\": \"https://nostrability.github.io/schemata/note/kind/15128.json\"
+}"},
+        {"kind35128Schema", "{
+  \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+  \"title\": \"kind35128\",
+  \"description\": \"NIP-5A Named Site Manifest event\",
+  \"allOf\": [
+    {
+      \"allOf\": [
+        {
+          \"$schema\": \"http://json-schema.org/draft-07/schema\",
+          \"type\": \"object\",
+          \"properties\": {
+            \"content\": {
+              \"type\": \"string\",
+              \"errorMessage\": \"content must be a string\",
+              \"description\": \"The content of the note\"
+            },
+            \"created_at\": {
+              \"type\": \"integer\",
+              \"errorMessage\": \"created_at must be a timestamp expressed in seconds (not milliseconds)\",
+              \"description\": \"The timestamp of the note creation\"
+            },
+            \"id\": {
+              \"allOf\": [
+                {
+                  \"allOf\": [
+                    {
+                      \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                      \"type\": \"string\",
+                      \"pattern\": \"^[a-f0-9]{64}$\"
+                    }
+                  ]
+                }
+              ],
+              \"errorMessage\": \"id must be a valid hash\",
+              \"description\": \"The id is a hash derived as specified in NIP-01\"
+            },
+            \"kind\": {
+              \"type\": \"integer\"
+            },
+            \"pubkey\": {
+              \"allOf\": [
+                {
+                  \"allOf\": [
+                    {
+                      \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                      \"type\": \"string\",
+                      \"pattern\": \"^[a-f0-9]{64}$\"
+                    }
+                  ]
+                }
+              ],
+              \"errorMessage\": \"pubkey must be a secp256k1 public key\",
+              \"description\": \"The public key of the note's author\"
+            },
+            \"sig\": {
+              \"type\": \"string\",
+              \"pattern\": \"^[a-f0-9]{128}$\",
+              \"errorMessage\": \"sig must be 128 lowercase hex characters (64 bytes)\",
+              \"description\": \"The cryptographic signature of the note\"
+            },
+            \"tags\": {
+              \"type\": \"array\",
+              \"errorMessage\": \"tags must be an array of valid tag tuples\",
+              \"description\": \"The tags of the note\",
+              \"items\": {
+                \"allOf\": [
+                  {
+                    \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                    \"type\": \"array\",
+                    \"items\": {
+                      \"type\": \"string\"
+                    },
+                    \"uniqueItems\": false
+                  }
+                ]
+              }
+            }
+          },
+          \"required\": [
+            \"content\",
+            \"created_at\",
+            \"id\",
+            \"kind\",
+            \"pubkey\",
+            \"sig\",
+            \"tags\"
+          ],
+          \"additionalProperties\": false
+        }
+      ]
+    },
+    {
+      \"type\": \"object\",
+      \"properties\": {
+        \"kind\": {
+          \"const\": 35128,
+          \"errorMessage\": \"kind must equal 35128\"
+        },
+        \"content\": {
+          \"type\": \"string\",
+          \"maxLength\": 0,
+          \"description\": \"Content must be empty\"
+        },
+        \"tags\": {
+          \"type\": \"array\",
+          \"items\": {
+            \"allOf\": [
+              {
+                \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                \"type\": \"array\",
+                \"items\": {
+                  \"type\": \"string\"
+                },
+                \"uniqueItems\": false
+              }
+            ]
+          },
+          \"minItems\": 2,
+          \"allOf\": [
+            {
+              \"contains\": {
+                \"allOf\": [
+                  {
+                    \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                    \"allOf\": [
+                      {
+                        \"allOf\": [
+                          {
+                            \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                            \"type\": \"array\",
+                            \"items\": {
+                              \"type\": \"string\"
+                            },
+                            \"uniqueItems\": false
+                          }
+                        ]
+                      },
+                      {
+                        \"type\": \"array\",
+                        \"minItems\": 2,
+                        \"items\": [
+                          {
+                            \"const\": \"d\"
+                          },
+                          {
+                            \"type\": \"string\"
+                          }
+                        ],
+                        \"additionalItems\": true
+                      }
+                    ]
+                  }
+                ]
+              },
+              \"errorMessage\": {
+                \"contains\": \"tags must include a d tag with the site identifier\"
+              }
+            },
+            {
+              \"contains\": {
+                \"allOf\": [
+                  {
+                    \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                    \"allOf\": [
+                      {
+                        \"allOf\": [
+                          {
+                            \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                            \"type\": \"array\",
+                            \"items\": {
+                              \"type\": \"string\"
+                            },
+                            \"uniqueItems\": false
+                          }
+                        ]
+                      },
+                      {
+                        \"type\": \"array\",
+                        \"minItems\": 3,
+                        \"maxItems\": 3,
+                        \"items\": [
+                          {
+                            \"const\": \"path\"
+                          },
+                          {
+                            \"type\": \"string\",
+                            \"pattern\": \"^/.+\",
+                            \"description\": \"Absolute path ending with a filename and extension\"
+                          },
+                          {
+                            \"type\": \"string\",
+                            \"pattern\": \"^[a-f0-9]{64}$\",
+                            \"description\": \"SHA-256 hash of the file served at this path\"
+                          }
+                        ],
+                        \"additionalItems\": false,
+                        \"errorMessage\": {
+                          \"minItems\": \"path tag must have at least 3 elements\"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              \"errorMessage\": {
+                \"contains\": \"tags must include at least one path tag\"
+              }
+            }
+          ]
+        }
+      },
+      \"required\": [
+        \"kind\",
+        \"tags\"
+      ]
+    }
+  ],
+  \"$id\": \"https://nostrability.github.io/schemata/note/kind/35128.json\"
+}"},
+        {"pathTagSchema", "{
+  \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+  \"allOf\": [
+    {
+      \"allOf\": [
+        {
+          \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+          \"type\": \"array\",
+          \"items\": {
+            \"type\": \"string\"
+          },
+          \"uniqueItems\": false
+        }
+      ]
+    },
+    {
+      \"type\": \"array\",
+      \"minItems\": 3,
+      \"maxItems\": 3,
+      \"items\": [
+        {
+          \"const\": \"path\"
+        },
+        {
+          \"type\": \"string\",
+          \"pattern\": \"^/.+\",
+          \"description\": \"Absolute path ending with a filename and extension\"
+        },
+        {
+          \"type\": \"string\",
+          \"pattern\": \"^[a-f0-9]{64}$\",
+          \"description\": \"SHA-256 hash of the file served at this path\"
+        }
+      ],
+      \"additionalItems\": false,
+      \"errorMessage\": {
+        \"minItems\": \"path tag must have at least 3 elements\"
+      }
+    }
+  ],
+  \"$id\": \"https://nostrability.github.io/schemata/tag/path.json\"
+}"},
+        {"sourceTagSchema", "{
+  \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+  \"allOf\": [
+    {
+      \"allOf\": [
+        {
+          \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+          \"type\": \"array\",
+          \"items\": {
+            \"type\": \"string\"
+          },
+          \"uniqueItems\": false
+        }
+      ]
+    },
+    {
+      \"type\": \"array\",
+      \"minItems\": 2,
+      \"maxItems\": 2,
+      \"items\": [
+        {
+          \"const\": \"source\"
+        },
+        {
+          \"type\": \"string\",
+          \"pattern\": \"^https?://.+\",
+          \"description\": \"URL to the site source code repository or archive\"
+        }
+      ],
+      \"additionalItems\": false,
+      \"errorMessage\": {
+        \"minItems\": \"source tag must have at least 2 elements\"
+      }
+    }
+  ],
+  \"$id\": \"https://nostrability.github.io/schemata/tag/source.json\"
+}"},
         {"kind17375Schema", "{
   \"$schema\": \"http://json-schema.org/draft-07/schema#\",
   \"title\": \"kind17375\",
@@ -28335,70 +31697,17 @@ inline const std::unordered_map<std::string, std::string>& raw_schemas() {
           \"const\": 17375,
           \"errorMessage\": \"kind must equal 17375\"
         },
-        \"tags\": {
-          \"type\": \"array\",
-          \"items\": {
-            \"allOf\": [
-              {
-                \"$schema\": \"http://json-schema.org/draft-07/schema#\",
-                \"type\": \"array\",
-                \"items\": {
-                  \"type\": \"string\"
-                },
-                \"uniqueItems\": false
-              }
-            ]
-          },
-          \"allOf\": [
-            {
-              \"contains\": {
-                \"allOf\": [
-                  {
-                    \"$schema\": \"http://json-schema.org/draft-07/schema#\",
-                    \"allOf\": [
-                      {
-                        \"allOf\": [
-                          {
-                            \"$schema\": \"http://json-schema.org/draft-07/schema#\",
-                            \"type\": \"array\",
-                            \"items\": {
-                              \"type\": \"string\"
-                            },
-                            \"uniqueItems\": false
-                          }
-                        ]
-                      },
-                      {
-                        \"type\": \"array\",
-                        \"minItems\": 2,
-                        \"maxItems\": 3,
-                        \"items\": [
-                          {
-                            \"const\": \"mint\"
-                          },
-                          {
-                            \"type\": \"string\",
-                            \"pattern\": \"^https?://.+$\"
-                          },
-                          {
-                            \"type\": \"string\"
-                          }
-                        ],
-                        \"additionalItems\": false
-                      }
-                    ]
-                  }
-                ]
-              },
-              \"errorMessage\": {
-                \"contains\": \"tags must include a mint tag\"
-              }
-            }
-          ]
+        \"content\": {
+          \"type\": \"string\",
+          \"minLength\": 1,
+          \"description\": \"NIP-44 encrypted content containing wallet data (privkey, mint URLs)\",
+          \"errorMessage\": {
+            \"minLength\": \"content must be a non-empty NIP-44 encrypted payload\"
+          }
         }
       },
       \"required\": [
-        \"tags\"
+        \"kind\"
       ]
     }
   ],
@@ -29726,40 +33035,42 @@ inline const std::unordered_map<std::string, std::string>& raw_schemas() {
           \"contains\": {
             \"allOf\": [
               {
-                \"$schema\": \"http://json-schema.org/draft-07/schema#\",
                 \"allOf\": [
                   {
-                    \"allOf\": [
-                      {
-                        \"$schema\": \"http://json-schema.org/draft-07/schema#\",
-                        \"type\": \"array\",
-                        \"items\": {
-                          \"type\": \"string\"
-                        },
-                        \"uniqueItems\": false
-                      }
-                    ]
-                  },
-                  {
+                    \"$schema\": \"http://json-schema.org/draft-07/schema#\",
                     \"type\": \"array\",
-                    \"minItems\": 2,
-                    \"items\": [
-                      {
-                        \"const\": \"relay\"
-                      },
-                      {
-                        \"type\": \"string\",
-                        \"pattern\": \"^(ws://|wss://).+$\"
-                      }
-                    ],
-                    \"additionalItems\": false
+                    \"items\": {
+                      \"type\": \"string\"
+                    },
+                    \"uniqueItems\": false
                   }
                 ]
+              },
+              {
+                \"type\": \"array\",
+                \"minItems\": 2,
+                \"items\": [
+                  {
+                    \"const\": \"relay\"
+                  },
+                  {
+                    \"type\": \"string\",
+                    \"anyOf\": [
+                      {
+                        \"pattern\": \"^(ws://|wss://).+$\"
+                      },
+                      {
+                        \"const\": \"ALL_RELAYS\"
+                      }
+                    ]
+                  }
+                ],
+                \"additionalItems\": false
               }
             ]
           },
           \"errorMessage\": {
-            \"contains\": \"tags must include at least one relay tag\"
+            \"contains\": \"tags must include at least one relay tag (ws(s):// URL or ALL_RELAYS)\"
           }
         }
       },
@@ -29977,9 +33288,25 @@ inline const std::unordered_map<std::string, std::string>& raw_schemas() {
     {
       \"type\": \"object\",
       \"properties\": {
+        \"kind\": {
+          \"const\": 10002,
+          \"errorMessage\": \"kind must equal 10002\"
+        },
         \"tags\": {
           \"type\": \"array\",
           \"items\": {
+            \"allOf\": [
+              {
+                \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                \"type\": \"array\",
+                \"items\": {
+                  \"type\": \"string\"
+                },
+                \"uniqueItems\": false
+              }
+            ]
+          },
+          \"contains\": {
             \"allOf\": [
               {
                 \"$schema\": \"http://json-schema.org/draft-07/schema#\",
@@ -29999,29 +33326,43 @@ inline const std::unordered_map<std::string, std::string>& raw_schemas() {
                   {
                     \"type\": \"array\",
                     \"minItems\": 2,
+                    \"maxItems\": 3,
                     \"items\": [
                       {
                         \"const\": \"r\"
                       },
                       {
-                        \"type\": \"string\"
+                        \"type\": \"string\",
+                        \"pattern\": \"^(ws://|wss://).+$\",
+                        \"description\": \"Relay URL\"
+                      },
+                      {
+                        \"type\": \"string\",
+                        \"enum\": [
+                          \"read\",
+                          \"write\"
+                        ],
+                        \"description\": \"Optional read/write marker\"
                       }
                     ],
-                    \"additionalItems\": true
+                    \"additionalItems\": false,
+                    \"errorMessage\": {
+                      \"minItems\": \"r tag must have at least 2 elements\"
+                    }
                   }
                 ]
               }
             ]
           },
-          \"additionalItems\": false,
           \"minItems\": 1,
           \"errorMessage\": {
-            \"type\": \"tags must be an array of r tags\",
-            \"minItems\": \"tags array must have at least one r tag\"
+            \"contains\": \"tags must include at least one r tag with a relay URL\",
+            \"minItems\": \"tags array must have at least one tag\"
           }
         }
       },
       \"required\": [
+        \"kind\",
         \"tags\"
       ]
     }
@@ -30046,15 +33387,29 @@ inline const std::unordered_map<std::string, std::string>& raw_schemas() {
     {
       \"type\": \"array\",
       \"minItems\": 2,
+      \"maxItems\": 3,
       \"items\": [
         {
           \"const\": \"r\"
         },
         {
-          \"type\": \"string\"
+          \"type\": \"string\",
+          \"pattern\": \"^(ws://|wss://).+$\",
+          \"description\": \"Relay URL\"
+        },
+        {
+          \"type\": \"string\",
+          \"enum\": [
+            \"read\",
+            \"write\"
+          ],
+          \"description\": \"Optional read/write marker\"
         }
       ],
-      \"additionalItems\": true
+      \"additionalItems\": false,
+      \"errorMessage\": {
+        \"minItems\": \"r tag must have at least 2 elements\"
+      }
     }
   ],
   \"$id\": \"https://nostrability.github.io/schemata/tag/r.json\"
@@ -31302,14 +34657,14 @@ inline const std::unordered_map<std::string, std::string>& raw_schemas() {
                           },
                           {
                             \"type\": \"string\",
-                            \"enum\": [
-                              \"mainnet\",
-                              \"testnet\",
-                              \"signet\"
-                            ]
+                            \"minLength\": 1,
+                            \"description\": \"Bitcoin network (e.g. mainnet, testnet, signet)\"
                           }
                         ],
-                        \"additionalItems\": false
+                        \"additionalItems\": false,
+                        \"errorMessage\": {
+                          \"minItems\": \"network tag must have at least 2 elements\"
+                        }
                       }
                     ]
                   }
@@ -31347,14 +34702,14 @@ inline const std::unordered_map<std::string, std::string>& raw_schemas() {
                           },
                           {
                             \"type\": \"string\",
-                            \"enum\": [
-                              \"onchain\",
-                              \"lightning\",
-                              \"liquid\"
-                            ]
+                            \"minLength\": 1,
+                            \"description\": \"Payment layer (e.g. onchain, lightning, liquid)\"
                           }
                         ],
-                        \"additionalItems\": false
+                        \"additionalItems\": false,
+                        \"errorMessage\": {
+                          \"minItems\": \"layer tag must have at least 2 elements\"
+                        }
                       }
                     ]
                   }
@@ -31692,14 +35047,14 @@ inline const std::unordered_map<std::string, std::string>& raw_schemas() {
         },
         {
           \"type\": \"string\",
-          \"enum\": [
-            \"onchain\",
-            \"lightning\",
-            \"liquid\"
-          ]
+          \"minLength\": 1,
+          \"description\": \"Payment layer (e.g. onchain, lightning, liquid)\"
         }
       ],
-      \"additionalItems\": false
+      \"additionalItems\": false,
+      \"errorMessage\": {
+        \"minItems\": \"layer tag must have at least 2 elements\"
+      }
     }
   ],
   \"$id\": \"https://nostrability.github.io/schemata/tag/layer.json\"
@@ -31729,14 +35084,14 @@ inline const std::unordered_map<std::string, std::string>& raw_schemas() {
         },
         {
           \"type\": \"string\",
-          \"enum\": [
-            \"mainnet\",
-            \"testnet\",
-            \"signet\"
-          ]
+          \"minLength\": 1,
+          \"description\": \"Bitcoin network (e.g. mainnet, testnet, signet)\"
         }
       ],
-      \"additionalItems\": false
+      \"additionalItems\": false,
+      \"errorMessage\": {
+        \"minItems\": \"network tag must have at least 2 elements\"
+      }
     }
   ],
   \"$id\": \"https://nostrability.github.io/schemata/tag/network.json\"
@@ -33125,6 +36480,96 @@ inline const std::unordered_map<std::string, std::string>& raw_schemas() {
                             \"uniqueItems\": false
                           }
                         ]
+                      }
+                    ],
+                    \"oneOf\": [
+                      {
+                        \"type\": \"array\",
+                        \"minItems\": 4,
+                        \"maxItems\": 5,
+                        \"items\": [
+                          {
+                            \"const\": \"e\"
+                          },
+                          {
+                            \"type\": \"string\",
+                            \"pattern\": \"^[a-f0-9]{64}$\"
+                          },
+                          {
+                            \"anyOf\": [
+                              {
+                                \"type\": \"string\",
+                                \"pattern\": \"^(ws://|wss://).+$\"
+                              },
+                              {
+                                \"type\": \"string\",
+                                \"const\": \"\"
+                              }
+                            ]
+                          },
+                          {
+                            \"type\": \"string\",
+                            \"enum\": [
+                              \"reply\",
+                              \"root\"
+                            ]
+                          },
+                          {
+                            \"allOf\": [
+                              {
+                                \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                                \"type\": \"string\",
+                                \"pattern\": \"^[a-f0-9]{64}$\"
+                              }
+                            ]
+                          }
+                        ],
+                        \"additionalItems\": false
+                      },
+                      {
+                        \"type\": \"array\",
+                        \"minItems\": 2,
+                        \"maxItems\": 3,
+                        \"items\": [
+                          {
+                            \"const\": \"e\"
+                          },
+                          {
+                            \"type\": \"string\",
+                            \"pattern\": \"^[a-f0-9]{64}$\"
+                          },
+                          {
+                            \"type\": \"string\",
+                            \"pattern\": \"^(ws://|wss://).+$\"
+                          }
+                        ],
+                        \"additionalItems\": false
+                      }
+                    ]
+                  }
+                ]
+              },
+              \"errorMessage\": {
+                \"contains\": \"tags must include an e tag referencing the approved post\"
+              }
+            },
+            {
+              \"contains\": {
+                \"allOf\": [
+                  {
+                    \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                    \"allOf\": [
+                      {
+                        \"allOf\": [
+                          {
+                            \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                            \"type\": \"array\",
+                            \"items\": {
+                              \"type\": \"string\"
+                            },
+                            \"uniqueItems\": false
+                          }
+                        ]
                       },
                       {
                         \"type\": \"array\",
@@ -34029,6 +37474,1059 @@ inline const std::unordered_map<std::string, std::string>& raw_schemas() {
     }
   ],
   \"$id\": \"https://nostrability.github.io/schemata/note/kind/30382.json\"
+}"},
+        {"kind30383Schema", "{
+  \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+  \"title\": \"kind30383\",
+  \"description\": \"NIP-85 Trusted Assertion (event as subject)\",
+  \"allOf\": [
+    {
+      \"allOf\": [
+        {
+          \"$schema\": \"http://json-schema.org/draft-07/schema\",
+          \"type\": \"object\",
+          \"properties\": {
+            \"content\": {
+              \"type\": \"string\",
+              \"errorMessage\": \"content must be a string\",
+              \"description\": \"The content of the note\"
+            },
+            \"created_at\": {
+              \"type\": \"integer\",
+              \"errorMessage\": \"created_at must be a timestamp expressed in seconds (not milliseconds)\",
+              \"description\": \"The timestamp of the note creation\"
+            },
+            \"id\": {
+              \"allOf\": [
+                {
+                  \"allOf\": [
+                    {
+                      \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                      \"type\": \"string\",
+                      \"pattern\": \"^[a-f0-9]{64}$\"
+                    }
+                  ]
+                }
+              ],
+              \"errorMessage\": \"id must be a valid hash\",
+              \"description\": \"The id is a hash derived as specified in NIP-01\"
+            },
+            \"kind\": {
+              \"type\": \"integer\"
+            },
+            \"pubkey\": {
+              \"allOf\": [
+                {
+                  \"allOf\": [
+                    {
+                      \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                      \"type\": \"string\",
+                      \"pattern\": \"^[a-f0-9]{64}$\"
+                    }
+                  ]
+                }
+              ],
+              \"errorMessage\": \"pubkey must be a secp256k1 public key\",
+              \"description\": \"The public key of the note's author\"
+            },
+            \"sig\": {
+              \"type\": \"string\",
+              \"pattern\": \"^[a-f0-9]{128}$\",
+              \"errorMessage\": \"sig must be 128 lowercase hex characters (64 bytes)\",
+              \"description\": \"The cryptographic signature of the note\"
+            },
+            \"tags\": {
+              \"type\": \"array\",
+              \"errorMessage\": \"tags must be an array of valid tag tuples\",
+              \"description\": \"The tags of the note\",
+              \"items\": {
+                \"allOf\": [
+                  {
+                    \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                    \"type\": \"array\",
+                    \"items\": {
+                      \"type\": \"string\"
+                    },
+                    \"uniqueItems\": false
+                  }
+                ]
+              }
+            }
+          },
+          \"required\": [
+            \"content\",
+            \"created_at\",
+            \"id\",
+            \"kind\",
+            \"pubkey\",
+            \"sig\",
+            \"tags\"
+          ],
+          \"additionalProperties\": false
+        }
+      ]
+    },
+    {
+      \"type\": \"object\",
+      \"properties\": {
+        \"kind\": {
+          \"const\": 30383,
+          \"errorMessage\": \"kind must equal 30383\"
+        },
+        \"content\": {
+          \"type\": \"string\",
+          \"maxLength\": 0,
+          \"description\": \"Content must be an empty string\",
+          \"errorMessage\": \"content must be an empty string\"
+        },
+        \"tags\": {
+          \"type\": \"array\",
+          \"items\": {
+            \"allOf\": [
+              {
+                \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                \"type\": \"array\",
+                \"items\": {
+                  \"type\": \"string\"
+                },
+                \"uniqueItems\": false
+              }
+            ]
+          },
+          \"minItems\": 1,
+          \"allOf\": [
+            {
+              \"contains\": {
+                \"allOf\": [
+                  {
+                    \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                    \"allOf\": [
+                      {
+                        \"allOf\": [
+                          {
+                            \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                            \"type\": \"array\",
+                            \"items\": {
+                              \"type\": \"string\"
+                            },
+                            \"uniqueItems\": false
+                          }
+                        ]
+                      },
+                      {
+                        \"type\": \"array\",
+                        \"minItems\": 2,
+                        \"items\": [
+                          {
+                            \"const\": \"d\"
+                          },
+                          {
+                            \"type\": \"string\"
+                          }
+                        ],
+                        \"additionalItems\": true
+                      }
+                    ]
+                  }
+                ]
+              },
+              \"errorMessage\": {
+                \"contains\": \"tags must include a d tag with the target event ID\"
+              }
+            }
+          ]
+        }
+      },
+      \"required\": [
+        \"kind\",
+        \"content\",
+        \"tags\"
+      ]
+    }
+  ],
+  \"$id\": \"https://nostrability.github.io/schemata/note/kind/30383.json\"
+}"},
+        {"kind30384Schema", "{
+  \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+  \"title\": \"kind30384\",
+  \"description\": \"NIP-85 Trusted Assertion (addressable event as subject)\",
+  \"allOf\": [
+    {
+      \"allOf\": [
+        {
+          \"$schema\": \"http://json-schema.org/draft-07/schema\",
+          \"type\": \"object\",
+          \"properties\": {
+            \"content\": {
+              \"type\": \"string\",
+              \"errorMessage\": \"content must be a string\",
+              \"description\": \"The content of the note\"
+            },
+            \"created_at\": {
+              \"type\": \"integer\",
+              \"errorMessage\": \"created_at must be a timestamp expressed in seconds (not milliseconds)\",
+              \"description\": \"The timestamp of the note creation\"
+            },
+            \"id\": {
+              \"allOf\": [
+                {
+                  \"allOf\": [
+                    {
+                      \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                      \"type\": \"string\",
+                      \"pattern\": \"^[a-f0-9]{64}$\"
+                    }
+                  ]
+                }
+              ],
+              \"errorMessage\": \"id must be a valid hash\",
+              \"description\": \"The id is a hash derived as specified in NIP-01\"
+            },
+            \"kind\": {
+              \"type\": \"integer\"
+            },
+            \"pubkey\": {
+              \"allOf\": [
+                {
+                  \"allOf\": [
+                    {
+                      \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                      \"type\": \"string\",
+                      \"pattern\": \"^[a-f0-9]{64}$\"
+                    }
+                  ]
+                }
+              ],
+              \"errorMessage\": \"pubkey must be a secp256k1 public key\",
+              \"description\": \"The public key of the note's author\"
+            },
+            \"sig\": {
+              \"type\": \"string\",
+              \"pattern\": \"^[a-f0-9]{128}$\",
+              \"errorMessage\": \"sig must be 128 lowercase hex characters (64 bytes)\",
+              \"description\": \"The cryptographic signature of the note\"
+            },
+            \"tags\": {
+              \"type\": \"array\",
+              \"errorMessage\": \"tags must be an array of valid tag tuples\",
+              \"description\": \"The tags of the note\",
+              \"items\": {
+                \"allOf\": [
+                  {
+                    \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                    \"type\": \"array\",
+                    \"items\": {
+                      \"type\": \"string\"
+                    },
+                    \"uniqueItems\": false
+                  }
+                ]
+              }
+            }
+          },
+          \"required\": [
+            \"content\",
+            \"created_at\",
+            \"id\",
+            \"kind\",
+            \"pubkey\",
+            \"sig\",
+            \"tags\"
+          ],
+          \"additionalProperties\": false
+        }
+      ]
+    },
+    {
+      \"type\": \"object\",
+      \"properties\": {
+        \"kind\": {
+          \"const\": 30384,
+          \"errorMessage\": \"kind must equal 30384\"
+        },
+        \"content\": {
+          \"type\": \"string\",
+          \"maxLength\": 0,
+          \"description\": \"Content must be an empty string\",
+          \"errorMessage\": \"content must be an empty string\"
+        },
+        \"tags\": {
+          \"type\": \"array\",
+          \"items\": {
+            \"allOf\": [
+              {
+                \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                \"type\": \"array\",
+                \"items\": {
+                  \"type\": \"string\"
+                },
+                \"uniqueItems\": false
+              }
+            ]
+          },
+          \"minItems\": 1,
+          \"allOf\": [
+            {
+              \"contains\": {
+                \"allOf\": [
+                  {
+                    \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                    \"allOf\": [
+                      {
+                        \"allOf\": [
+                          {
+                            \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                            \"type\": \"array\",
+                            \"items\": {
+                              \"type\": \"string\"
+                            },
+                            \"uniqueItems\": false
+                          }
+                        ]
+                      },
+                      {
+                        \"type\": \"array\",
+                        \"minItems\": 2,
+                        \"items\": [
+                          {
+                            \"const\": \"d\"
+                          },
+                          {
+                            \"type\": \"string\"
+                          }
+                        ],
+                        \"additionalItems\": true
+                      }
+                    ]
+                  }
+                ]
+              },
+              \"errorMessage\": {
+                \"contains\": \"tags must include a d tag with the target event address\"
+              }
+            }
+          ]
+        }
+      },
+      \"required\": [
+        \"kind\",
+        \"content\",
+        \"tags\"
+      ]
+    }
+  ],
+  \"$id\": \"https://nostrability.github.io/schemata/note/kind/30384.json\"
+}"},
+        {"kind38172Schema", "{
+  \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+  \"title\": \"kind38172\",
+  \"description\": \"NIP-87 Cashu Mint Announcement event\",
+  \"allOf\": [
+    {
+      \"allOf\": [
+        {
+          \"$schema\": \"http://json-schema.org/draft-07/schema\",
+          \"type\": \"object\",
+          \"properties\": {
+            \"content\": {
+              \"type\": \"string\",
+              \"errorMessage\": \"content must be a string\",
+              \"description\": \"The content of the note\"
+            },
+            \"created_at\": {
+              \"type\": \"integer\",
+              \"errorMessage\": \"created_at must be a timestamp expressed in seconds (not milliseconds)\",
+              \"description\": \"The timestamp of the note creation\"
+            },
+            \"id\": {
+              \"allOf\": [
+                {
+                  \"allOf\": [
+                    {
+                      \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                      \"type\": \"string\",
+                      \"pattern\": \"^[a-f0-9]{64}$\"
+                    }
+                  ]
+                }
+              ],
+              \"errorMessage\": \"id must be a valid hash\",
+              \"description\": \"The id is a hash derived as specified in NIP-01\"
+            },
+            \"kind\": {
+              \"type\": \"integer\"
+            },
+            \"pubkey\": {
+              \"allOf\": [
+                {
+                  \"allOf\": [
+                    {
+                      \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                      \"type\": \"string\",
+                      \"pattern\": \"^[a-f0-9]{64}$\"
+                    }
+                  ]
+                }
+              ],
+              \"errorMessage\": \"pubkey must be a secp256k1 public key\",
+              \"description\": \"The public key of the note's author\"
+            },
+            \"sig\": {
+              \"type\": \"string\",
+              \"pattern\": \"^[a-f0-9]{128}$\",
+              \"errorMessage\": \"sig must be 128 lowercase hex characters (64 bytes)\",
+              \"description\": \"The cryptographic signature of the note\"
+            },
+            \"tags\": {
+              \"type\": \"array\",
+              \"errorMessage\": \"tags must be an array of valid tag tuples\",
+              \"description\": \"The tags of the note\",
+              \"items\": {
+                \"allOf\": [
+                  {
+                    \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                    \"type\": \"array\",
+                    \"items\": {
+                      \"type\": \"string\"
+                    },
+                    \"uniqueItems\": false
+                  }
+                ]
+              }
+            }
+          },
+          \"required\": [
+            \"content\",
+            \"created_at\",
+            \"id\",
+            \"kind\",
+            \"pubkey\",
+            \"sig\",
+            \"tags\"
+          ],
+          \"additionalProperties\": false
+        }
+      ]
+    },
+    {
+      \"type\": \"object\",
+      \"properties\": {
+        \"kind\": {
+          \"const\": 38172,
+          \"errorMessage\": \"kind must equal 38172\"
+        },
+        \"tags\": {
+          \"type\": \"array\",
+          \"items\": {
+            \"allOf\": [
+              {
+                \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                \"type\": \"array\",
+                \"items\": {
+                  \"type\": \"string\"
+                },
+                \"uniqueItems\": false
+              }
+            ]
+          },
+          \"minItems\": 1,
+          \"allOf\": [
+            {
+              \"contains\": {
+                \"allOf\": [
+                  {
+                    \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                    \"allOf\": [
+                      {
+                        \"allOf\": [
+                          {
+                            \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                            \"type\": \"array\",
+                            \"items\": {
+                              \"type\": \"string\"
+                            },
+                            \"uniqueItems\": false
+                          }
+                        ]
+                      },
+                      {
+                        \"type\": \"array\",
+                        \"minItems\": 2,
+                        \"items\": [
+                          {
+                            \"const\": \"d\"
+                          },
+                          {
+                            \"type\": \"string\"
+                          }
+                        ],
+                        \"additionalItems\": true
+                      }
+                    ]
+                  }
+                ]
+              },
+              \"errorMessage\": {
+                \"contains\": \"tags must include a d tag with the mint pubkey\"
+              }
+            },
+            {
+              \"contains\": {
+                \"allOf\": [
+                  {
+                    \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                    \"allOf\": [
+                      {
+                        \"allOf\": [
+                          {
+                            \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                            \"type\": \"array\",
+                            \"items\": {
+                              \"type\": \"string\"
+                            },
+                            \"uniqueItems\": false
+                          }
+                        ]
+                      },
+                      {
+                        \"type\": \"array\",
+                        \"minItems\": 2,
+                        \"items\": [
+                          {
+                            \"const\": \"u\"
+                          },
+                          {
+                            \"type\": \"string\",
+                            \"pattern\": \"^https?://.+$\"
+                          }
+                        ],
+                        \"additionalItems\": false
+                      }
+                    ]
+                  }
+                ]
+              },
+              \"errorMessage\": {
+                \"contains\": \"tags must include a u tag with the mint URL\"
+              }
+            },
+            {
+              \"contains\": {
+                \"allOf\": [
+                  {
+                    \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                    \"allOf\": [
+                      {
+                        \"allOf\": [
+                          {
+                            \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                            \"type\": \"array\",
+                            \"items\": {
+                              \"type\": \"string\"
+                            },
+                            \"uniqueItems\": false
+                          }
+                        ]
+                      },
+                      {
+                        \"type\": \"array\",
+                        \"minItems\": 2,
+                        \"maxItems\": 2,
+                        \"items\": [
+                          {
+                            \"const\": \"nuts\"
+                          },
+                          {
+                            \"type\": \"string\",
+                            \"pattern\": \"^[0-9]+(,[0-9]+)*$\",
+                            \"description\": \"Comma-separated NUT specification numbers\"
+                          }
+                        ],
+                        \"additionalItems\": false,
+                        \"errorMessage\": {
+                          \"minItems\": \"nuts tag must have at least 2 elements\"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              \"errorMessage\": {
+                \"contains\": \"tags must include a nuts tag with supported NUT numbers\"
+              }
+            },
+            {
+              \"contains\": {
+                \"allOf\": [
+                  {
+                    \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                    \"allOf\": [
+                      {
+                        \"allOf\": [
+                          {
+                            \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                            \"type\": \"array\",
+                            \"items\": {
+                              \"type\": \"string\"
+                            },
+                            \"uniqueItems\": false
+                          }
+                        ]
+                      },
+                      {
+                        \"type\": \"array\",
+                        \"minItems\": 2,
+                        \"maxItems\": 2,
+                        \"items\": [
+                          {
+                            \"const\": \"n\"
+                          },
+                          {
+                            \"type\": \"string\",
+                            \"enum\": [
+                              \"mainnet\",
+                              \"testnet\",
+                              \"signet\",
+                              \"regtest\"
+                            ],
+                            \"description\": \"Bitcoin network identifier\"
+                          }
+                        ],
+                        \"additionalItems\": false,
+                        \"errorMessage\": {
+                          \"minItems\": \"n tag must have at least 2 elements\"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              \"errorMessage\": {
+                \"contains\": \"tags must include an n tag with the network identifier\"
+              }
+            }
+          ]
+        }
+      },
+      \"required\": [
+        \"kind\",
+        \"tags\"
+      ]
+    }
+  ],
+  \"$id\": \"https://nostrability.github.io/schemata/note/kind/38172.json\"
+}"},
+        {"kind38173Schema", "{
+  \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+  \"title\": \"kind38173\",
+  \"description\": \"NIP-87 Fedimint Announcement event\",
+  \"allOf\": [
+    {
+      \"allOf\": [
+        {
+          \"$schema\": \"http://json-schema.org/draft-07/schema\",
+          \"type\": \"object\",
+          \"properties\": {
+            \"content\": {
+              \"type\": \"string\",
+              \"errorMessage\": \"content must be a string\",
+              \"description\": \"The content of the note\"
+            },
+            \"created_at\": {
+              \"type\": \"integer\",
+              \"errorMessage\": \"created_at must be a timestamp expressed in seconds (not milliseconds)\",
+              \"description\": \"The timestamp of the note creation\"
+            },
+            \"id\": {
+              \"allOf\": [
+                {
+                  \"allOf\": [
+                    {
+                      \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                      \"type\": \"string\",
+                      \"pattern\": \"^[a-f0-9]{64}$\"
+                    }
+                  ]
+                }
+              ],
+              \"errorMessage\": \"id must be a valid hash\",
+              \"description\": \"The id is a hash derived as specified in NIP-01\"
+            },
+            \"kind\": {
+              \"type\": \"integer\"
+            },
+            \"pubkey\": {
+              \"allOf\": [
+                {
+                  \"allOf\": [
+                    {
+                      \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                      \"type\": \"string\",
+                      \"pattern\": \"^[a-f0-9]{64}$\"
+                    }
+                  ]
+                }
+              ],
+              \"errorMessage\": \"pubkey must be a secp256k1 public key\",
+              \"description\": \"The public key of the note's author\"
+            },
+            \"sig\": {
+              \"type\": \"string\",
+              \"pattern\": \"^[a-f0-9]{128}$\",
+              \"errorMessage\": \"sig must be 128 lowercase hex characters (64 bytes)\",
+              \"description\": \"The cryptographic signature of the note\"
+            },
+            \"tags\": {
+              \"type\": \"array\",
+              \"errorMessage\": \"tags must be an array of valid tag tuples\",
+              \"description\": \"The tags of the note\",
+              \"items\": {
+                \"allOf\": [
+                  {
+                    \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                    \"type\": \"array\",
+                    \"items\": {
+                      \"type\": \"string\"
+                    },
+                    \"uniqueItems\": false
+                  }
+                ]
+              }
+            }
+          },
+          \"required\": [
+            \"content\",
+            \"created_at\",
+            \"id\",
+            \"kind\",
+            \"pubkey\",
+            \"sig\",
+            \"tags\"
+          ],
+          \"additionalProperties\": false
+        }
+      ]
+    },
+    {
+      \"type\": \"object\",
+      \"properties\": {
+        \"kind\": {
+          \"const\": 38173,
+          \"errorMessage\": \"kind must equal 38173\"
+        },
+        \"tags\": {
+          \"type\": \"array\",
+          \"items\": {
+            \"allOf\": [
+              {
+                \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                \"type\": \"array\",
+                \"items\": {
+                  \"type\": \"string\"
+                },
+                \"uniqueItems\": false
+              }
+            ]
+          },
+          \"minItems\": 1,
+          \"allOf\": [
+            {
+              \"contains\": {
+                \"allOf\": [
+                  {
+                    \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                    \"allOf\": [
+                      {
+                        \"allOf\": [
+                          {
+                            \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                            \"type\": \"array\",
+                            \"items\": {
+                              \"type\": \"string\"
+                            },
+                            \"uniqueItems\": false
+                          }
+                        ]
+                      },
+                      {
+                        \"type\": \"array\",
+                        \"minItems\": 2,
+                        \"items\": [
+                          {
+                            \"const\": \"d\"
+                          },
+                          {
+                            \"type\": \"string\"
+                          }
+                        ],
+                        \"additionalItems\": true
+                      }
+                    ]
+                  }
+                ]
+              },
+              \"errorMessage\": {
+                \"contains\": \"tags must include a d tag with the federation ID\"
+              }
+            },
+            {
+              \"contains\": {
+                \"allOf\": [
+                  {
+                    \"allOf\": [
+                      {
+                        \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                        \"type\": \"array\",
+                        \"items\": {
+                          \"type\": \"string\"
+                        },
+                        \"uniqueItems\": false
+                      }
+                    ]
+                  },
+                  {
+                    \"type\": \"array\",
+                    \"minItems\": 2,
+                    \"items\": [
+                      {
+                        \"const\": \"u\"
+                      },
+                      {
+                        \"type\": \"string\",
+                        \"minLength\": 1
+                      }
+                    ],
+                    \"additionalItems\": false
+                  }
+                ]
+              },
+              \"errorMessage\": {
+                \"contains\": \"tags must include a u tag with a fedimint invite code\"
+              }
+            },
+            {
+              \"contains\": {
+                \"allOf\": [
+                  {
+                    \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                    \"allOf\": [
+                      {
+                        \"allOf\": [
+                          {
+                            \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                            \"type\": \"array\",
+                            \"items\": {
+                              \"type\": \"string\"
+                            },
+                            \"uniqueItems\": false
+                          }
+                        ]
+                      },
+                      {
+                        \"type\": \"array\",
+                        \"minItems\": 2,
+                        \"maxItems\": 2,
+                        \"items\": [
+                          {
+                            \"const\": \"modules\"
+                          },
+                          {
+                            \"type\": \"string\",
+                            \"minLength\": 1,
+                            \"pattern\": \"^[A-Za-z0-9_]+(,[A-Za-z0-9_]+)*$\",
+                            \"description\": \"Comma-separated module names\"
+                          }
+                        ],
+                        \"additionalItems\": false,
+                        \"errorMessage\": {
+                          \"minItems\": \"modules tag must have at least 2 elements\"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              \"errorMessage\": {
+                \"contains\": \"tags must include a modules tag with supported module names\"
+              }
+            },
+            {
+              \"contains\": {
+                \"allOf\": [
+                  {
+                    \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                    \"allOf\": [
+                      {
+                        \"allOf\": [
+                          {
+                            \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                            \"type\": \"array\",
+                            \"items\": {
+                              \"type\": \"string\"
+                            },
+                            \"uniqueItems\": false
+                          }
+                        ]
+                      },
+                      {
+                        \"type\": \"array\",
+                        \"minItems\": 2,
+                        \"maxItems\": 2,
+                        \"items\": [
+                          {
+                            \"const\": \"n\"
+                          },
+                          {
+                            \"type\": \"string\",
+                            \"enum\": [
+                              \"mainnet\",
+                              \"testnet\",
+                              \"signet\",
+                              \"regtest\"
+                            ],
+                            \"description\": \"Bitcoin network identifier\"
+                          }
+                        ],
+                        \"additionalItems\": false,
+                        \"errorMessage\": {
+                          \"minItems\": \"n tag must have at least 2 elements\"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              \"errorMessage\": {
+                \"contains\": \"tags must include an n tag with the network identifier\"
+              }
+            }
+          ]
+        }
+      },
+      \"required\": [
+        \"kind\",
+        \"tags\"
+      ]
+    }
+  ],
+  \"$id\": \"https://nostrability.github.io/schemata/note/kind/38173.json\"
+}"},
+        {"modulesTagSchema", "{
+  \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+  \"allOf\": [
+    {
+      \"allOf\": [
+        {
+          \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+          \"type\": \"array\",
+          \"items\": {
+            \"type\": \"string\"
+          },
+          \"uniqueItems\": false
+        }
+      ]
+    },
+    {
+      \"type\": \"array\",
+      \"minItems\": 2,
+      \"maxItems\": 2,
+      \"items\": [
+        {
+          \"const\": \"modules\"
+        },
+        {
+          \"type\": \"string\",
+          \"minLength\": 1,
+          \"pattern\": \"^[A-Za-z0-9_]+(,[A-Za-z0-9_]+)*$\",
+          \"description\": \"Comma-separated module names\"
+        }
+      ],
+      \"additionalItems\": false,
+      \"errorMessage\": {
+        \"minItems\": \"modules tag must have at least 2 elements\"
+      }
+    }
+  ],
+  \"$id\": \"https://nostrability.github.io/schemata/tag/modules.json\"
+}"},
+        {"nTagSchema", "{
+  \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+  \"allOf\": [
+    {
+      \"allOf\": [
+        {
+          \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+          \"type\": \"array\",
+          \"items\": {
+            \"type\": \"string\"
+          },
+          \"uniqueItems\": false
+        }
+      ]
+    },
+    {
+      \"type\": \"array\",
+      \"minItems\": 2,
+      \"maxItems\": 2,
+      \"items\": [
+        {
+          \"const\": \"n\"
+        },
+        {
+          \"type\": \"string\",
+          \"enum\": [
+            \"mainnet\",
+            \"testnet\",
+            \"signet\",
+            \"regtest\"
+          ],
+          \"description\": \"Bitcoin network identifier\"
+        }
+      ],
+      \"additionalItems\": false,
+      \"errorMessage\": {
+        \"minItems\": \"n tag must have at least 2 elements\"
+      }
+    }
+  ],
+  \"$id\": \"https://nostrability.github.io/schemata/tag/n.json\"
+}"},
+        {"nutsTagSchema", "{
+  \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+  \"allOf\": [
+    {
+      \"allOf\": [
+        {
+          \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+          \"type\": \"array\",
+          \"items\": {
+            \"type\": \"string\"
+          },
+          \"uniqueItems\": false
+        }
+      ]
+    },
+    {
+      \"type\": \"array\",
+      \"minItems\": 2,
+      \"maxItems\": 2,
+      \"items\": [
+        {
+          \"const\": \"nuts\"
+        },
+        {
+          \"type\": \"string\",
+          \"pattern\": \"^[0-9]+(,[0-9]+)*$\",
+          \"description\": \"Comma-separated NUT specification numbers\"
+        }
+      ],
+      \"additionalItems\": false,
+      \"errorMessage\": {
+        \"minItems\": \"nuts tag must have at least 2 elements\"
+      }
+    }
+  ],
+  \"$id\": \"https://nostrability.github.io/schemata/tag/nuts.json\"
 }"},
         {"kind1018Schema", "{
   \"$schema\": \"http://json-schema.org/draft-07/schema#\",
@@ -35826,7 +40324,7 @@ inline const std::unordered_map<std::string, std::string>& raw_schemas() {
           },
           \"minItems\": 3,
           \"errorMessage\": {
-            \"minItems\": \"tags must contain at least three tags (e, p, request)\"
+            \"minItems\": \"tags must contain at least three tags (e, p, amount)\"
           },
           \"allOf\": [
             {
@@ -35989,15 +40487,14 @@ inline const std::unordered_map<std::string, std::string>& raw_schemas() {
                       {
                         \"type\": \"array\",
                         \"minItems\": 2,
-                        \"maxItems\": 2,
                         \"items\": [
                           {
-                            \"const\": \"request\"
+                            \"const\": \"amount\"
                           },
                           {
                             \"type\": \"string\",
-                            \"minLength\": 1,
-                            \"description\": \"JSON-encoded original job request event\"
+                            \"pattern\": \"^[0-9]+$\",
+                            \"description\": \"Amount in millisats, as a decimal string\"
                           }
                         ],
                         \"additionalItems\": false
@@ -36007,7 +40504,61 @@ inline const std::unordered_map<std::string, std::string>& raw_schemas() {
                 ]
               },
               \"errorMessage\": {
-                \"contains\": \"tags must include a request tag with the original job request JSON\"
+                \"contains\": \"tags must include an amount tag with the charge in millisats\"
+              }
+            },
+            {
+              \"if\": {
+                \"contains\": {
+                  \"type\": \"array\",
+                  \"items\": [
+                    {
+                      \"const\": \"request\"
+                    }
+                  ]
+                }
+              },
+              \"then\": {
+                \"contains\": {
+                  \"allOf\": [
+                    {
+                      \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                      \"allOf\": [
+                        {
+                          \"allOf\": [
+                            {
+                              \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                              \"type\": \"array\",
+                              \"items\": {
+                                \"type\": \"string\"
+                              },
+                              \"uniqueItems\": false
+                            }
+                          ]
+                        },
+                        {
+                          \"type\": \"array\",
+                          \"minItems\": 2,
+                          \"maxItems\": 2,
+                          \"items\": [
+                            {
+                              \"const\": \"request\"
+                            },
+                            {
+                              \"type\": \"string\",
+                              \"minLength\": 1,
+                              \"description\": \"JSON-encoded original job request event\"
+                            }
+                          ],
+                          \"additionalItems\": false
+                        }
+                      ]
+                    }
+                  ]
+                },
+                \"errorMessage\": {
+                  \"contains\": \"if a request tag is present, it must match the request tag schema\"
+                }
               }
             }
           ]
@@ -36135,7 +40686,7 @@ inline const std::unordered_map<std::string, std::string>& raw_schemas() {
           },
           \"minItems\": 3,
           \"errorMessage\": {
-            \"minItems\": \"tags must contain at least three tags (e, p, request)\"
+            \"minItems\": \"tags must contain at least three tags (e, p, amount)\"
           },
           \"allOf\": [
             {
@@ -36279,44 +40830,100 @@ inline const std::unordered_map<std::string, std::string>& raw_schemas() {
             },
             {
               \"contains\": {
+                \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                \"description\": \"NIP-90 amount tag for job results: ['amount', '<millisats>', '<optional-bolt11>']\",
                 \"allOf\": [
                   {
-                    \"$schema\": \"http://json-schema.org/draft-07/schema#\",
                     \"allOf\": [
                       {
-                        \"allOf\": [
-                          {
-                            \"$schema\": \"http://json-schema.org/draft-07/schema#\",
-                            \"type\": \"array\",
-                            \"items\": {
-                              \"type\": \"string\"
-                            },
-                            \"uniqueItems\": false
-                          }
-                        ]
-                      },
-                      {
+                        \"$schema\": \"http://json-schema.org/draft-07/schema#\",
                         \"type\": \"array\",
-                        \"minItems\": 2,
-                        \"maxItems\": 2,
-                        \"items\": [
-                          {
-                            \"const\": \"request\"
-                          },
-                          {
-                            \"type\": \"string\",
-                            \"minLength\": 1,
-                            \"description\": \"JSON-encoded original job request event\"
-                          }
-                        ],
-                        \"additionalItems\": false
+                        \"items\": {
+                          \"type\": \"string\"
+                        },
+                        \"uniqueItems\": false
                       }
                     ]
+                  },
+                  {
+                    \"type\": \"array\",
+                    \"minItems\": 2,
+                    \"maxItems\": 3,
+                    \"items\": [
+                      {
+                        \"const\": \"amount\"
+                      },
+                      {
+                        \"type\": \"string\",
+                        \"pattern\": \"^[0-9]+$\",
+                        \"description\": \"Amount charged in millisats\"
+                      },
+                      {
+                        \"type\": \"string\",
+                        \"minLength\": 1,
+                        \"description\": \"Optional bolt11 invoice\"
+                      }
+                    ],
+                    \"additionalItems\": false,
+                    \"errorMessage\": {
+                      \"minItems\": \"amount tag must have at least 2 elements\"
+                    }
                   }
                 ]
               },
               \"errorMessage\": {
-                \"contains\": \"tags must include a request tag with the original job request JSON\"
+                \"contains\": \"tags must include an amount tag with the charge in millisats\"
+              }
+            },
+            {
+              \"if\": {
+                \"contains\": {
+                  \"type\": \"array\",
+                  \"items\": [
+                    {
+                      \"const\": \"request\"
+                    }
+                  ]
+                }
+              },
+              \"then\": {
+                \"contains\": {
+                  \"allOf\": [
+                    {
+                      \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                      \"allOf\": [
+                        {
+                          \"allOf\": [
+                            {
+                              \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                              \"type\": \"array\",
+                              \"items\": {
+                                \"type\": \"string\"
+                              },
+                              \"uniqueItems\": false
+                            }
+                          ]
+                        },
+                        {
+                          \"type\": \"array\",
+                          \"minItems\": 2,
+                          \"maxItems\": 2,
+                          \"items\": [
+                            {
+                              \"const\": \"request\"
+                            },
+                            {
+                              \"type\": \"string\",
+                              \"minLength\": 1,
+                              \"description\": \"JSON-encoded original job request event\"
+                            }
+                          ],
+                          \"additionalItems\": false
+                        }
+                      ]
+                    }
+                  ]
+                }
               }
             }
           ]
@@ -36444,7 +41051,7 @@ inline const std::unordered_map<std::string, std::string>& raw_schemas() {
           },
           \"minItems\": 3,
           \"errorMessage\": {
-            \"minItems\": \"tags must contain at least three tags (e, p, request)\"
+            \"minItems\": \"tags must contain at least three tags (e, p, amount)\"
           },
           \"allOf\": [
             {
@@ -36588,44 +41195,100 @@ inline const std::unordered_map<std::string, std::string>& raw_schemas() {
             },
             {
               \"contains\": {
+                \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                \"description\": \"NIP-90 amount tag for job results: ['amount', '<millisats>', '<optional-bolt11>']\",
                 \"allOf\": [
                   {
-                    \"$schema\": \"http://json-schema.org/draft-07/schema#\",
                     \"allOf\": [
                       {
-                        \"allOf\": [
-                          {
-                            \"$schema\": \"http://json-schema.org/draft-07/schema#\",
-                            \"type\": \"array\",
-                            \"items\": {
-                              \"type\": \"string\"
-                            },
-                            \"uniqueItems\": false
-                          }
-                        ]
-                      },
-                      {
+                        \"$schema\": \"http://json-schema.org/draft-07/schema#\",
                         \"type\": \"array\",
-                        \"minItems\": 2,
-                        \"maxItems\": 2,
-                        \"items\": [
-                          {
-                            \"const\": \"request\"
-                          },
-                          {
-                            \"type\": \"string\",
-                            \"minLength\": 1,
-                            \"description\": \"JSON-encoded original job request event\"
-                          }
-                        ],
-                        \"additionalItems\": false
+                        \"items\": {
+                          \"type\": \"string\"
+                        },
+                        \"uniqueItems\": false
                       }
                     ]
+                  },
+                  {
+                    \"type\": \"array\",
+                    \"minItems\": 2,
+                    \"maxItems\": 3,
+                    \"items\": [
+                      {
+                        \"const\": \"amount\"
+                      },
+                      {
+                        \"type\": \"string\",
+                        \"pattern\": \"^[0-9]+$\",
+                        \"description\": \"Amount charged in millisats\"
+                      },
+                      {
+                        \"type\": \"string\",
+                        \"minLength\": 1,
+                        \"description\": \"Optional bolt11 invoice\"
+                      }
+                    ],
+                    \"additionalItems\": false,
+                    \"errorMessage\": {
+                      \"minItems\": \"amount tag must have at least 2 elements\"
+                    }
                   }
                 ]
               },
               \"errorMessage\": {
-                \"contains\": \"tags must include a request tag with the original job request JSON\"
+                \"contains\": \"tags must include an amount tag with the charge in millisats\"
+              }
+            },
+            {
+              \"if\": {
+                \"contains\": {
+                  \"type\": \"array\",
+                  \"items\": [
+                    {
+                      \"const\": \"request\"
+                    }
+                  ]
+                }
+              },
+              \"then\": {
+                \"contains\": {
+                  \"allOf\": [
+                    {
+                      \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                      \"allOf\": [
+                        {
+                          \"allOf\": [
+                            {
+                              \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                              \"type\": \"array\",
+                              \"items\": {
+                                \"type\": \"string\"
+                              },
+                              \"uniqueItems\": false
+                            }
+                          ]
+                        },
+                        {
+                          \"type\": \"array\",
+                          \"minItems\": 2,
+                          \"maxItems\": 2,
+                          \"items\": [
+                            {
+                              \"const\": \"request\"
+                            },
+                            {
+                              \"type\": \"string\",
+                              \"minLength\": 1,
+                              \"description\": \"JSON-encoded original job request event\"
+                            }
+                          ],
+                          \"additionalItems\": false
+                        }
+                      ]
+                    }
+                  ]
+                }
               }
             }
           ]
@@ -36972,7 +41635,7 @@ inline const std::unordered_map<std::string, std::string>& raw_schemas() {
     {
       \"type\": \"array\",
       \"minItems\": 2,
-      \"maxItems\": 3,
+      \"maxItems\": 2,
       \"items\": [
         {
           \"const\": \"bid\"
@@ -36980,15 +41643,13 @@ inline const std::unordered_map<std::string, std::string>& raw_schemas() {
         {
           \"type\": \"string\",
           \"pattern\": \"^[0-9]+$\",
-          \"description\": \"Bid amount in millisats\"
-        },
-        {
-          \"type\": \"string\",
-          \"pattern\": \"^[0-9]+$\",
-          \"description\": \"Maximum bid amount in millisats\"
+          \"description\": \"Maximum millisats the user is willing to pay\"
         }
       ],
-      \"additionalItems\": false
+      \"additionalItems\": false,
+      \"errorMessage\": {
+        \"minItems\": \"bid tag must have at least 2 elements\"
+      }
     }
   ],
   \"$id\": \"https://nostrability.github.io/schemata/tag/bid.json\"
@@ -37980,6 +42641,43 @@ inline const std::unordered_map<std::string, std::string>& raw_schemas() {
         },
         \"tags\": {
           \"type\": \"array\",
+          \"contains\": {
+            \"allOf\": [
+              {
+                \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                \"allOf\": [
+                  {
+                    \"allOf\": [
+                      {
+                        \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                        \"type\": \"array\",
+                        \"items\": {
+                          \"type\": \"string\"
+                        },
+                        \"uniqueItems\": false
+                      }
+                    ]
+                  },
+                  {
+                    \"type\": \"array\",
+                    \"minItems\": 2,
+                    \"items\": [
+                      {
+                        \"const\": \"d\"
+                      },
+                      {
+                        \"type\": \"string\"
+                      }
+                    ],
+                    \"additionalItems\": true
+                  }
+                ]
+              }
+            ]
+          },
+          \"errorMessage\": {
+            \"contains\": \"tags must include a d tag (required for addressable events)\"
+          },
           \"items\": {
             \"allOf\": [
               {
@@ -38269,6 +42967,43 @@ inline const std::unordered_map<std::string, std::string>& raw_schemas() {
         },
         \"tags\": {
           \"type\": \"array\",
+          \"contains\": {
+            \"allOf\": [
+              {
+                \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                \"allOf\": [
+                  {
+                    \"allOf\": [
+                      {
+                        \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                        \"type\": \"array\",
+                        \"items\": {
+                          \"type\": \"string\"
+                        },
+                        \"uniqueItems\": false
+                      }
+                    ]
+                  },
+                  {
+                    \"type\": \"array\",
+                    \"minItems\": 2,
+                    \"items\": [
+                      {
+                        \"const\": \"d\"
+                      },
+                      {
+                        \"type\": \"string\"
+                      }
+                    ],
+                    \"additionalItems\": true
+                  }
+                ]
+              }
+            ]
+          },
+          \"errorMessage\": {
+            \"contains\": \"tags must include a d tag (required for addressable events)\"
+          },
           \"items\": {
             \"allOf\": [
               {
@@ -38674,15 +43409,739 @@ inline const std::unordered_map<std::string, std::string>& raw_schemas() {
           \"pattern\": \"^https?://\\\\S+$\",
           \"description\": \"URL pointing directly to an audio file\",
           \"errorMessage\": \"content must be a URL to an audio file\"
+        },
+        \"tags\": {
+          \"type\": \"array\",
+          \"items\": {
+            \"allOf\": [
+              {
+                \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                \"type\": \"array\",
+                \"items\": {
+                  \"type\": \"string\"
+                },
+                \"uniqueItems\": false
+              }
+            ]
+          },
+          \"allOf\": [
+            {
+              \"contains\": {
+                \"allOf\": [
+                  {
+                    \"allOf\": [
+                      {
+                        \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                        \"type\": \"array\",
+                        \"items\": {
+                          \"type\": \"string\"
+                        },
+                        \"uniqueItems\": false
+                      }
+                    ]
+                  },
+                  {
+                    \"type\": \"array\",
+                    \"minItems\": 2,
+                    \"items\": [
+                      {
+                        \"const\": \"K\"
+                      },
+                      {
+                        \"type\": \"string\",
+                        \"pattern\": \"^[0-9]+$\"
+                      }
+                    ]
+                  }
+                ]
+              },
+              \"errorMessage\": {
+                \"contains\": \"tags must include a K tag with the root event kind (NIP-22)\"
+              }
+            }
+          ]
         }
       },
       \"required\": [
         \"kind\",
-        \"content\"
+        \"content\",
+        \"tags\"
       ]
     }
   ],
   \"$id\": \"https://nostrability.github.io/schemata/note/kind/1244.json\"
+}"},
+        {"kind24Schema", "{
+  \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+  \"title\": \"kind24\",
+  \"description\": \"NIP-A4 Public Message event\",
+  \"allOf\": [
+    {
+      \"allOf\": [
+        {
+          \"$schema\": \"http://json-schema.org/draft-07/schema\",
+          \"type\": \"object\",
+          \"properties\": {
+            \"content\": {
+              \"type\": \"string\",
+              \"errorMessage\": \"content must be a string\",
+              \"description\": \"The content of the note\"
+            },
+            \"created_at\": {
+              \"type\": \"integer\",
+              \"errorMessage\": \"created_at must be a timestamp expressed in seconds (not milliseconds)\",
+              \"description\": \"The timestamp of the note creation\"
+            },
+            \"id\": {
+              \"allOf\": [
+                {
+                  \"allOf\": [
+                    {
+                      \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                      \"type\": \"string\",
+                      \"pattern\": \"^[a-f0-9]{64}$\"
+                    }
+                  ]
+                }
+              ],
+              \"errorMessage\": \"id must be a valid hash\",
+              \"description\": \"The id is a hash derived as specified in NIP-01\"
+            },
+            \"kind\": {
+              \"type\": \"integer\"
+            },
+            \"pubkey\": {
+              \"allOf\": [
+                {
+                  \"allOf\": [
+                    {
+                      \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                      \"type\": \"string\",
+                      \"pattern\": \"^[a-f0-9]{64}$\"
+                    }
+                  ]
+                }
+              ],
+              \"errorMessage\": \"pubkey must be a secp256k1 public key\",
+              \"description\": \"The public key of the note's author\"
+            },
+            \"sig\": {
+              \"type\": \"string\",
+              \"pattern\": \"^[a-f0-9]{128}$\",
+              \"errorMessage\": \"sig must be 128 lowercase hex characters (64 bytes)\",
+              \"description\": \"The cryptographic signature of the note\"
+            },
+            \"tags\": {
+              \"type\": \"array\",
+              \"errorMessage\": \"tags must be an array of valid tag tuples\",
+              \"description\": \"The tags of the note\",
+              \"items\": {
+                \"allOf\": [
+                  {
+                    \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                    \"type\": \"array\",
+                    \"items\": {
+                      \"type\": \"string\"
+                    },
+                    \"uniqueItems\": false
+                  }
+                ]
+              }
+            }
+          },
+          \"required\": [
+            \"content\",
+            \"created_at\",
+            \"id\",
+            \"kind\",
+            \"pubkey\",
+            \"sig\",
+            \"tags\"
+          ],
+          \"additionalProperties\": false
+        }
+      ]
+    },
+    {
+      \"type\": \"object\",
+      \"properties\": {
+        \"kind\": {
+          \"const\": 24,
+          \"errorMessage\": \"kind must equal 24\"
+        },
+        \"content\": {
+          \"type\": \"string\",
+          \"minLength\": 1,
+          \"description\": \"The message text in plain text\"
+        },
+        \"tags\": {
+          \"type\": \"array\",
+          \"items\": {
+            \"allOf\": [
+              {
+                \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                \"type\": \"array\",
+                \"items\": {
+                  \"type\": \"string\"
+                },
+                \"uniqueItems\": false
+              }
+            ]
+          },
+          \"minItems\": 1,
+          \"allOf\": [
+            {
+              \"contains\": {
+                \"allOf\": [
+                  {
+                    \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                    \"allOf\": [
+                      {
+                        \"allOf\": [
+                          {
+                            \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                            \"type\": \"array\",
+                            \"items\": {
+                              \"type\": \"string\"
+                            },
+                            \"uniqueItems\": false
+                          }
+                        ]
+                      },
+                      {
+                        \"type\": \"array\",
+                        \"minItems\": 2,
+                        \"items\": [
+                          {
+                            \"const\": \"p\"
+                          },
+                          {
+                            \"allOf\": [
+                              {
+                                \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                                \"type\": \"string\",
+                                \"pattern\": \"^[a-f0-9]{64}$\"
+                              }
+                            ]
+                          },
+                          {
+                            \"title\": \"petname\",
+                            \"type\": \"string\"
+                          }
+                        ],
+                        \"additionalItems\": false
+                      }
+                    ]
+                  }
+                ]
+              },
+              \"errorMessage\": {
+                \"contains\": \"tags must include at least one p tag for the message receiver\"
+              }
+            }
+          ]
+        }
+      },
+      \"required\": [
+        \"kind\",
+        \"content\",
+        \"tags\"
+      ]
+    }
+  ],
+  \"$id\": \"https://nostrability.github.io/schemata/note/kind/24.json\"
+}"},
+        {"kind39701Schema", "{
+  \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+  \"title\": \"kind39701\",
+  \"description\": \"NIP-B0 Web Bookmark event\",
+  \"allOf\": [
+    {
+      \"allOf\": [
+        {
+          \"$schema\": \"http://json-schema.org/draft-07/schema\",
+          \"type\": \"object\",
+          \"properties\": {
+            \"content\": {
+              \"type\": \"string\",
+              \"errorMessage\": \"content must be a string\",
+              \"description\": \"The content of the note\"
+            },
+            \"created_at\": {
+              \"type\": \"integer\",
+              \"errorMessage\": \"created_at must be a timestamp expressed in seconds (not milliseconds)\",
+              \"description\": \"The timestamp of the note creation\"
+            },
+            \"id\": {
+              \"allOf\": [
+                {
+                  \"allOf\": [
+                    {
+                      \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                      \"type\": \"string\",
+                      \"pattern\": \"^[a-f0-9]{64}$\"
+                    }
+                  ]
+                }
+              ],
+              \"errorMessage\": \"id must be a valid hash\",
+              \"description\": \"The id is a hash derived as specified in NIP-01\"
+            },
+            \"kind\": {
+              \"type\": \"integer\"
+            },
+            \"pubkey\": {
+              \"allOf\": [
+                {
+                  \"allOf\": [
+                    {
+                      \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                      \"type\": \"string\",
+                      \"pattern\": \"^[a-f0-9]{64}$\"
+                    }
+                  ]
+                }
+              ],
+              \"errorMessage\": \"pubkey must be a secp256k1 public key\",
+              \"description\": \"The public key of the note's author\"
+            },
+            \"sig\": {
+              \"type\": \"string\",
+              \"pattern\": \"^[a-f0-9]{128}$\",
+              \"errorMessage\": \"sig must be 128 lowercase hex characters (64 bytes)\",
+              \"description\": \"The cryptographic signature of the note\"
+            },
+            \"tags\": {
+              \"type\": \"array\",
+              \"errorMessage\": \"tags must be an array of valid tag tuples\",
+              \"description\": \"The tags of the note\",
+              \"items\": {
+                \"allOf\": [
+                  {
+                    \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                    \"type\": \"array\",
+                    \"items\": {
+                      \"type\": \"string\"
+                    },
+                    \"uniqueItems\": false
+                  }
+                ]
+              }
+            }
+          },
+          \"required\": [
+            \"content\",
+            \"created_at\",
+            \"id\",
+            \"kind\",
+            \"pubkey\",
+            \"sig\",
+            \"tags\"
+          ],
+          \"additionalProperties\": false
+        }
+      ]
+    },
+    {
+      \"type\": \"object\",
+      \"properties\": {
+        \"kind\": {
+          \"const\": 39701,
+          \"errorMessage\": \"kind must equal 39701\"
+        },
+        \"tags\": {
+          \"type\": \"array\",
+          \"items\": {
+            \"allOf\": [
+              {
+                \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                \"type\": \"array\",
+                \"items\": {
+                  \"type\": \"string\"
+                },
+                \"uniqueItems\": false
+              }
+            ]
+          },
+          \"minItems\": 1,
+          \"allOf\": [
+            {
+              \"contains\": {
+                \"allOf\": [
+                  {
+                    \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                    \"allOf\": [
+                      {
+                        \"allOf\": [
+                          {
+                            \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                            \"type\": \"array\",
+                            \"items\": {
+                              \"type\": \"string\"
+                            },
+                            \"uniqueItems\": false
+                          }
+                        ]
+                      },
+                      {
+                        \"type\": \"array\",
+                        \"minItems\": 2,
+                        \"items\": [
+                          {
+                            \"const\": \"d\"
+                          },
+                          {
+                            \"type\": \"string\"
+                          }
+                        ],
+                        \"additionalItems\": true
+                      }
+                    ]
+                  }
+                ]
+              },
+              \"errorMessage\": {
+                \"contains\": \"tags must include a d tag with the URL (without scheme)\"
+              }
+            },
+            {
+              \"if\": {
+                \"contains\": {
+                  \"type\": \"array\",
+                  \"items\": [
+                    {
+                      \"const\": \"title\"
+                    }
+                  ]
+                }
+              },
+              \"then\": {
+                \"contains\": {
+                  \"allOf\": [
+                    {
+                      \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                      \"allOf\": [
+                        {
+                          \"allOf\": [
+                            {
+                              \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                              \"type\": \"array\",
+                              \"items\": {
+                                \"type\": \"string\"
+                              },
+                              \"uniqueItems\": false
+                            }
+                          ]
+                        },
+                        {
+                          \"type\": \"array\",
+                          \"minItems\": 2,
+                          \"items\": [
+                            {
+                              \"const\": \"title\"
+                            },
+                            {
+                              \"type\": \"string\"
+                            }
+                          ],
+                          \"additionalItems\": true
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              \"if\": {
+                \"contains\": {
+                  \"type\": \"array\",
+                  \"items\": [
+                    {
+                      \"const\": \"published_at\"
+                    }
+                  ]
+                }
+              },
+              \"then\": {
+                \"contains\": {
+                  \"allOf\": [
+                    {
+                      \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                      \"allOf\": [
+                        {
+                          \"allOf\": [
+                            {
+                              \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                              \"type\": \"array\",
+                              \"items\": {
+                                \"type\": \"string\"
+                              },
+                              \"uniqueItems\": false
+                            }
+                          ]
+                        },
+                        {
+                          \"type\": \"array\",
+                          \"minItems\": 2,
+                          \"items\": [
+                            {
+                              \"const\": \"published_at\"
+                            },
+                            {
+                              \"type\": \"string\",
+                              \"pattern\": \"^\\\\d+$\",
+                              \"description\": \"Unix timestamp in seconds (string) of first publication\"
+                            }
+                          ],
+                          \"additionalItems\": true
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      },
+      \"required\": [
+        \"kind\",
+        \"tags\"
+      ]
+    }
+  ],
+  \"$id\": \"https://nostrability.github.io/schemata/note/kind/39701.json\"
+}"},
+        {"kind1337Schema", "{
+  \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+  \"title\": \"kind1337\",
+  \"description\": \"NIP-C0 Code Snippet event\",
+  \"allOf\": [
+    {
+      \"allOf\": [
+        {
+          \"$schema\": \"http://json-schema.org/draft-07/schema\",
+          \"type\": \"object\",
+          \"properties\": {
+            \"content\": {
+              \"type\": \"string\",
+              \"errorMessage\": \"content must be a string\",
+              \"description\": \"The content of the note\"
+            },
+            \"created_at\": {
+              \"type\": \"integer\",
+              \"errorMessage\": \"created_at must be a timestamp expressed in seconds (not milliseconds)\",
+              \"description\": \"The timestamp of the note creation\"
+            },
+            \"id\": {
+              \"allOf\": [
+                {
+                  \"allOf\": [
+                    {
+                      \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                      \"type\": \"string\",
+                      \"pattern\": \"^[a-f0-9]{64}$\"
+                    }
+                  ]
+                }
+              ],
+              \"errorMessage\": \"id must be a valid hash\",
+              \"description\": \"The id is a hash derived as specified in NIP-01\"
+            },
+            \"kind\": {
+              \"type\": \"integer\"
+            },
+            \"pubkey\": {
+              \"allOf\": [
+                {
+                  \"allOf\": [
+                    {
+                      \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                      \"type\": \"string\",
+                      \"pattern\": \"^[a-f0-9]{64}$\"
+                    }
+                  ]
+                }
+              ],
+              \"errorMessage\": \"pubkey must be a secp256k1 public key\",
+              \"description\": \"The public key of the note's author\"
+            },
+            \"sig\": {
+              \"type\": \"string\",
+              \"pattern\": \"^[a-f0-9]{128}$\",
+              \"errorMessage\": \"sig must be 128 lowercase hex characters (64 bytes)\",
+              \"description\": \"The cryptographic signature of the note\"
+            },
+            \"tags\": {
+              \"type\": \"array\",
+              \"errorMessage\": \"tags must be an array of valid tag tuples\",
+              \"description\": \"The tags of the note\",
+              \"items\": {
+                \"allOf\": [
+                  {
+                    \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                    \"type\": \"array\",
+                    \"items\": {
+                      \"type\": \"string\"
+                    },
+                    \"uniqueItems\": false
+                  }
+                ]
+              }
+            }
+          },
+          \"required\": [
+            \"content\",
+            \"created_at\",
+            \"id\",
+            \"kind\",
+            \"pubkey\",
+            \"sig\",
+            \"tags\"
+          ],
+          \"additionalProperties\": false
+        }
+      ]
+    },
+    {
+      \"type\": \"object\",
+      \"properties\": {
+        \"kind\": {
+          \"const\": 1337,
+          \"errorMessage\": \"kind must equal 1337\"
+        },
+        \"content\": {
+          \"type\": \"string\",
+          \"minLength\": 1,
+          \"description\": \"The code snippet text\"
+        },
+        \"tags\": {
+          \"type\": \"array\",
+          \"items\": {
+            \"allOf\": [
+              {
+                \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                \"type\": \"array\",
+                \"items\": {
+                  \"type\": \"string\"
+                },
+                \"uniqueItems\": false
+              }
+            ]
+          },
+          \"minItems\": 1,
+          \"allOf\": [
+            {
+              \"if\": {
+                \"contains\": {
+                  \"type\": \"array\",
+                  \"items\": [
+                    {
+                      \"const\": \"name\"
+                    }
+                  ]
+                }
+              },
+              \"then\": {
+                \"contains\": {
+                  \"allOf\": [
+                    {
+                      \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                      \"allOf\": [
+                        {
+                          \"allOf\": [
+                            {
+                              \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                              \"type\": \"array\",
+                              \"items\": {
+                                \"type\": \"string\"
+                              },
+                              \"uniqueItems\": false
+                            }
+                          ]
+                        },
+                        {
+                          \"type\": \"array\",
+                          \"minItems\": 2,
+                          \"maxItems\": 2,
+                          \"items\": [
+                            {
+                              \"const\": \"name\"
+                            },
+                            {
+                              \"type\": \"string\",
+                              \"minLength\": 1
+                            }
+                          ],
+                          \"additionalItems\": false
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              \"if\": {
+                \"contains\": {
+                  \"type\": \"array\",
+                  \"items\": [
+                    {
+                      \"const\": \"description\"
+                    }
+                  ]
+                }
+              },
+              \"then\": {
+                \"contains\": {
+                  \"allOf\": [
+                    {
+                      \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                      \"allOf\": [
+                        {
+                          \"allOf\": [
+                            {
+                              \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                              \"type\": \"array\",
+                              \"items\": {
+                                \"type\": \"string\"
+                              },
+                              \"uniqueItems\": false
+                            }
+                          ]
+                        },
+                        {
+                          \"type\": \"array\",
+                          \"minItems\": 2,
+                          \"items\": [
+                            {
+                              \"const\": \"description\"
+                            },
+                            {
+                              \"type\": \"string\",
+                              \"description\": \"JSON-encoded zap request event\"
+                            }
+                          ],
+                          \"additionalItems\": false
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      },
+      \"required\": [
+        \"kind\",
+        \"content\",
+        \"tags\"
+      ]
+    }
+  ],
+  \"$id\": \"https://nostrability.github.io/schemata/note/kind/1337.json\"
 }"},
         {"kind9Schema", "{
   \"$schema\": \"http://json-schema.org/draft-07/schema#\",
@@ -39144,6 +44603,1999 @@ inline const std::unordered_map<std::string, std::string>& raw_schemas() {
   ],
   \"$id\": \"https://nostrability.github.io/schemata/note/kind/24242.json\"
 }"},
+        {"kind30Schema", "{
+  \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+  \"title\": \"kind30\",
+  \"description\": \"NKBIP-03 Internal Nostr reference (citation)\",
+  \"allOf\": [
+    {
+      \"allOf\": [
+        {
+          \"$schema\": \"http://json-schema.org/draft-07/schema\",
+          \"type\": \"object\",
+          \"properties\": {
+            \"content\": {
+              \"type\": \"string\",
+              \"errorMessage\": \"content must be a string\",
+              \"description\": \"The content of the note\"
+            },
+            \"created_at\": {
+              \"type\": \"integer\",
+              \"errorMessage\": \"created_at must be a timestamp expressed in seconds (not milliseconds)\",
+              \"description\": \"The timestamp of the note creation\"
+            },
+            \"id\": {
+              \"allOf\": [
+                {
+                  \"allOf\": [
+                    {
+                      \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                      \"type\": \"string\",
+                      \"pattern\": \"^[a-f0-9]{64}$\"
+                    }
+                  ]
+                }
+              ],
+              \"errorMessage\": \"id must be a valid hash\",
+              \"description\": \"The id is a hash derived as specified in NIP-01\"
+            },
+            \"kind\": {
+              \"type\": \"integer\"
+            },
+            \"pubkey\": {
+              \"allOf\": [
+                {
+                  \"allOf\": [
+                    {
+                      \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                      \"type\": \"string\",
+                      \"pattern\": \"^[a-f0-9]{64}$\"
+                    }
+                  ]
+                }
+              ],
+              \"errorMessage\": \"pubkey must be a secp256k1 public key\",
+              \"description\": \"The public key of the note's author\"
+            },
+            \"sig\": {
+              \"type\": \"string\",
+              \"pattern\": \"^[a-f0-9]{128}$\",
+              \"errorMessage\": \"sig must be 128 lowercase hex characters (64 bytes)\",
+              \"description\": \"The cryptographic signature of the note\"
+            },
+            \"tags\": {
+              \"type\": \"array\",
+              \"errorMessage\": \"tags must be an array of valid tag tuples\",
+              \"description\": \"The tags of the note\",
+              \"items\": {
+                \"allOf\": [
+                  {
+                    \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                    \"type\": \"array\",
+                    \"items\": {
+                      \"type\": \"string\"
+                    },
+                    \"uniqueItems\": false
+                  }
+                ]
+              }
+            }
+          },
+          \"required\": [
+            \"content\",
+            \"created_at\",
+            \"id\",
+            \"kind\",
+            \"pubkey\",
+            \"sig\",
+            \"tags\"
+          ],
+          \"additionalProperties\": false
+        }
+      ]
+    },
+    {
+      \"type\": \"object\",
+      \"properties\": {
+        \"kind\": {
+          \"const\": 30,
+          \"errorMessage\": \"kind must equal 30\"
+        },
+        \"tags\": {
+          \"type\": \"array\",
+          \"items\": {
+            \"allOf\": [
+              {
+                \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                \"type\": \"array\",
+                \"items\": {
+                  \"type\": \"string\"
+                },
+                \"uniqueItems\": false
+              }
+            ]
+          },
+          \"minItems\": 1,
+          \"allOf\": [
+            {
+              \"contains\": {
+                \"allOf\": [
+                  {
+                    \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                    \"allOf\": [
+                      {
+                        \"allOf\": [
+                          {
+                            \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                            \"type\": \"array\",
+                            \"items\": {
+                              \"type\": \"string\"
+                            },
+                            \"uniqueItems\": false
+                          }
+                        ]
+                      },
+                      {
+                        \"type\": \"array\",
+                        \"minItems\": 2,
+                        \"items\": [
+                          {
+                            \"const\": \"title\"
+                          },
+                          {
+                            \"type\": \"string\"
+                          }
+                        ],
+                        \"additionalItems\": true
+                      }
+                    ]
+                  }
+                ]
+              },
+              \"errorMessage\": {
+                \"contains\": \"tags must include a title tag for the citation\"
+              }
+            },
+            {
+              \"contains\": {
+                \"allOf\": [
+                  {
+                    \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                    \"allOf\": [
+                      {
+                        \"allOf\": [
+                          {
+                            \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                            \"type\": \"array\",
+                            \"items\": {
+                              \"type\": \"string\"
+                            },
+                            \"uniqueItems\": false
+                          }
+                        ]
+                      },
+                      {
+                        \"type\": \"array\",
+                        \"minItems\": 2,
+                        \"items\": [
+                          {
+                            \"const\": \"author\"
+                          },
+                          {
+                            \"type\": \"string\",
+                            \"minLength\": 1,
+                            \"description\": \"Author name for the citation\"
+                          }
+                        ],
+                        \"additionalItems\": {
+                          \"type\": \"string\",
+                          \"minLength\": 1
+                        },
+                        \"errorMessage\": {
+                          \"minItems\": \"author tag must have at least 2 elements\"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              \"errorMessage\": {
+                \"contains\": \"tags must include an author tag\"
+              }
+            },
+            {
+              \"if\": {
+                \"contains\": {
+                  \"type\": \"array\",
+                  \"items\": [
+                    {
+                      \"const\": \"published_on\"
+                    }
+                  ]
+                }
+              },
+              \"then\": {
+                \"contains\": {
+                  \"allOf\": [
+                    {
+                      \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                      \"allOf\": [
+                        {
+                          \"allOf\": [
+                            {
+                              \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                              \"type\": \"array\",
+                              \"items\": {
+                                \"type\": \"string\"
+                              },
+                              \"uniqueItems\": false
+                            }
+                          ]
+                        },
+                        {
+                          \"type\": \"array\",
+                          \"minItems\": 2,
+                          \"maxItems\": 2,
+                          \"items\": [
+                            {
+                              \"const\": \"published_on\"
+                            },
+                            {
+                              \"type\": \"string\",
+                              \"pattern\": \"^\\\\d{4}-\\\\d{2}-\\\\d{2}(T\\\\d{2}:\\\\d{2}(:\\\\d{2})?(\\\\.\\\\d+)?(Z|[+-]\\\\d{2}:\\\\d{2})?)?$\",
+                              \"description\": \"Date-time in ISO 8601 format\"
+                            }
+                          ],
+                          \"additionalItems\": false,
+                          \"errorMessage\": {
+                            \"minItems\": \"published_on tag must have at least 2 elements\"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              \"if\": {
+                \"contains\": {
+                  \"type\": \"array\",
+                  \"items\": [
+                    {
+                      \"const\": \"accessed_on\"
+                    }
+                  ]
+                }
+              },
+              \"then\": {
+                \"contains\": {
+                  \"allOf\": [
+                    {
+                      \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                      \"allOf\": [
+                        {
+                          \"allOf\": [
+                            {
+                              \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                              \"type\": \"array\",
+                              \"items\": {
+                                \"type\": \"string\"
+                              },
+                              \"uniqueItems\": false
+                            }
+                          ]
+                        },
+                        {
+                          \"type\": \"array\",
+                          \"minItems\": 2,
+                          \"maxItems\": 2,
+                          \"items\": [
+                            {
+                              \"const\": \"accessed_on\"
+                            },
+                            {
+                              \"type\": \"string\",
+                              \"pattern\": \"^\\\\d{4}-\\\\d{2}-\\\\d{2}(T\\\\d{2}:\\\\d{2}(:\\\\d{2})?(\\\\.\\\\d+)?(Z|[+-]\\\\d{2}:\\\\d{2})?)?$\",
+                              \"description\": \"Date-time in ISO 8601 format\"
+                            }
+                          ],
+                          \"additionalItems\": false,
+                          \"errorMessage\": {
+                            \"minItems\": \"accessed_on tag must have at least 2 elements\"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      },
+      \"required\": [
+        \"kind\",
+        \"tags\"
+      ]
+    }
+  ],
+  \"$id\": \"https://nostrability.github.io/schemata/note/kind/30.json\"
+}"},
+        {"kind31Schema", "{
+  \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+  \"title\": \"kind31\",
+  \"description\": \"NKBIP-03 External web reference (citation)\",
+  \"allOf\": [
+    {
+      \"allOf\": [
+        {
+          \"$schema\": \"http://json-schema.org/draft-07/schema\",
+          \"type\": \"object\",
+          \"properties\": {
+            \"content\": {
+              \"type\": \"string\",
+              \"errorMessage\": \"content must be a string\",
+              \"description\": \"The content of the note\"
+            },
+            \"created_at\": {
+              \"type\": \"integer\",
+              \"errorMessage\": \"created_at must be a timestamp expressed in seconds (not milliseconds)\",
+              \"description\": \"The timestamp of the note creation\"
+            },
+            \"id\": {
+              \"allOf\": [
+                {
+                  \"allOf\": [
+                    {
+                      \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                      \"type\": \"string\",
+                      \"pattern\": \"^[a-f0-9]{64}$\"
+                    }
+                  ]
+                }
+              ],
+              \"errorMessage\": \"id must be a valid hash\",
+              \"description\": \"The id is a hash derived as specified in NIP-01\"
+            },
+            \"kind\": {
+              \"type\": \"integer\"
+            },
+            \"pubkey\": {
+              \"allOf\": [
+                {
+                  \"allOf\": [
+                    {
+                      \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                      \"type\": \"string\",
+                      \"pattern\": \"^[a-f0-9]{64}$\"
+                    }
+                  ]
+                }
+              ],
+              \"errorMessage\": \"pubkey must be a secp256k1 public key\",
+              \"description\": \"The public key of the note's author\"
+            },
+            \"sig\": {
+              \"type\": \"string\",
+              \"pattern\": \"^[a-f0-9]{128}$\",
+              \"errorMessage\": \"sig must be 128 lowercase hex characters (64 bytes)\",
+              \"description\": \"The cryptographic signature of the note\"
+            },
+            \"tags\": {
+              \"type\": \"array\",
+              \"errorMessage\": \"tags must be an array of valid tag tuples\",
+              \"description\": \"The tags of the note\",
+              \"items\": {
+                \"allOf\": [
+                  {
+                    \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                    \"type\": \"array\",
+                    \"items\": {
+                      \"type\": \"string\"
+                    },
+                    \"uniqueItems\": false
+                  }
+                ]
+              }
+            }
+          },
+          \"required\": [
+            \"content\",
+            \"created_at\",
+            \"id\",
+            \"kind\",
+            \"pubkey\",
+            \"sig\",
+            \"tags\"
+          ],
+          \"additionalProperties\": false
+        }
+      ]
+    },
+    {
+      \"type\": \"object\",
+      \"properties\": {
+        \"kind\": {
+          \"const\": 31,
+          \"errorMessage\": \"kind must equal 31\"
+        },
+        \"tags\": {
+          \"type\": \"array\",
+          \"items\": {
+            \"allOf\": [
+              {
+                \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                \"type\": \"array\",
+                \"items\": {
+                  \"type\": \"string\"
+                },
+                \"uniqueItems\": false
+              }
+            ]
+          },
+          \"minItems\": 1,
+          \"allOf\": [
+            {
+              \"contains\": {
+                \"allOf\": [
+                  {
+                    \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                    \"allOf\": [
+                      {
+                        \"allOf\": [
+                          {
+                            \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                            \"type\": \"array\",
+                            \"items\": {
+                              \"type\": \"string\"
+                            },
+                            \"uniqueItems\": false
+                          }
+                        ]
+                      },
+                      {
+                        \"type\": \"array\",
+                        \"minItems\": 2,
+                        \"items\": [
+                          {
+                            \"const\": \"u\"
+                          },
+                          {
+                            \"type\": \"string\",
+                            \"pattern\": \"^https?://.+$\"
+                          }
+                        ],
+                        \"additionalItems\": false
+                      }
+                    ]
+                  }
+                ]
+              },
+              \"errorMessage\": {
+                \"contains\": \"tags must include a u tag with the URL of the citation\"
+              }
+            },
+            {
+              \"contains\": {
+                \"allOf\": [
+                  {
+                    \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                    \"allOf\": [
+                      {
+                        \"allOf\": [
+                          {
+                            \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                            \"type\": \"array\",
+                            \"items\": {
+                              \"type\": \"string\"
+                            },
+                            \"uniqueItems\": false
+                          }
+                        ]
+                      },
+                      {
+                        \"type\": \"array\",
+                        \"minItems\": 2,
+                        \"maxItems\": 2,
+                        \"items\": [
+                          {
+                            \"const\": \"accessed_on\"
+                          },
+                          {
+                            \"type\": \"string\",
+                            \"pattern\": \"^\\\\d{4}-\\\\d{2}-\\\\d{2}(T\\\\d{2}:\\\\d{2}(:\\\\d{2})?(\\\\.\\\\d+)?(Z|[+-]\\\\d{2}:\\\\d{2})?)?$\",
+                            \"description\": \"Date-time in ISO 8601 format\"
+                          }
+                        ],
+                        \"additionalItems\": false,
+                        \"errorMessage\": {
+                          \"minItems\": \"accessed_on tag must have at least 2 elements\"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              \"errorMessage\": {
+                \"contains\": \"tags must include an accessed_on tag with the access date\"
+              }
+            },
+            {
+              \"contains\": {
+                \"allOf\": [
+                  {
+                    \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                    \"allOf\": [
+                      {
+                        \"allOf\": [
+                          {
+                            \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                            \"type\": \"array\",
+                            \"items\": {
+                              \"type\": \"string\"
+                            },
+                            \"uniqueItems\": false
+                          }
+                        ]
+                      },
+                      {
+                        \"type\": \"array\",
+                        \"minItems\": 2,
+                        \"items\": [
+                          {
+                            \"const\": \"title\"
+                          },
+                          {
+                            \"type\": \"string\"
+                          }
+                        ],
+                        \"additionalItems\": true
+                      }
+                    ]
+                  }
+                ]
+              },
+              \"errorMessage\": {
+                \"contains\": \"tags must include a title tag for the citation\"
+              }
+            },
+            {
+              \"contains\": {
+                \"allOf\": [
+                  {
+                    \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                    \"allOf\": [
+                      {
+                        \"allOf\": [
+                          {
+                            \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                            \"type\": \"array\",
+                            \"items\": {
+                              \"type\": \"string\"
+                            },
+                            \"uniqueItems\": false
+                          }
+                        ]
+                      },
+                      {
+                        \"type\": \"array\",
+                        \"minItems\": 2,
+                        \"items\": [
+                          {
+                            \"const\": \"author\"
+                          },
+                          {
+                            \"type\": \"string\",
+                            \"minLength\": 1,
+                            \"description\": \"Author name for the citation\"
+                          }
+                        ],
+                        \"additionalItems\": {
+                          \"type\": \"string\",
+                          \"minLength\": 1
+                        },
+                        \"errorMessage\": {
+                          \"minItems\": \"author tag must have at least 2 elements\"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              \"errorMessage\": {
+                \"contains\": \"tags must include an author tag\"
+              }
+            },
+            {
+              \"if\": {
+                \"contains\": {
+                  \"type\": \"array\",
+                  \"items\": [
+                    {
+                      \"const\": \"published_on\"
+                    }
+                  ]
+                }
+              },
+              \"then\": {
+                \"contains\": {
+                  \"allOf\": [
+                    {
+                      \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                      \"allOf\": [
+                        {
+                          \"allOf\": [
+                            {
+                              \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                              \"type\": \"array\",
+                              \"items\": {
+                                \"type\": \"string\"
+                              },
+                              \"uniqueItems\": false
+                            }
+                          ]
+                        },
+                        {
+                          \"type\": \"array\",
+                          \"minItems\": 2,
+                          \"maxItems\": 2,
+                          \"items\": [
+                            {
+                              \"const\": \"published_on\"
+                            },
+                            {
+                              \"type\": \"string\",
+                              \"pattern\": \"^\\\\d{4}-\\\\d{2}-\\\\d{2}(T\\\\d{2}:\\\\d{2}(:\\\\d{2})?(\\\\.\\\\d+)?(Z|[+-]\\\\d{2}:\\\\d{2})?)?$\",
+                              \"description\": \"Date-time in ISO 8601 format\"
+                            }
+                          ],
+                          \"additionalItems\": false,
+                          \"errorMessage\": {
+                            \"minItems\": \"published_on tag must have at least 2 elements\"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              \"if\": {
+                \"contains\": {
+                  \"type\": \"array\",
+                  \"items\": [
+                    {
+                      \"const\": \"version\"
+                    }
+                  ]
+                }
+              },
+              \"then\": {
+                \"contains\": {
+                  \"allOf\": [
+                    {
+                      \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                      \"allOf\": [
+                        {
+                          \"allOf\": [
+                            {
+                              \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                              \"type\": \"array\",
+                              \"items\": {
+                                \"type\": \"string\"
+                              },
+                              \"uniqueItems\": false
+                            }
+                          ]
+                        },
+                        {
+                          \"type\": \"array\",
+                          \"minItems\": 2,
+                          \"maxItems\": 2,
+                          \"items\": [
+                            {
+                              \"const\": \"version\"
+                            },
+                            {
+                              \"type\": \"string\",
+                              \"minLength\": 1,
+                              \"description\": \"Version or edition of the publication or model\"
+                            }
+                          ],
+                          \"additionalItems\": false,
+                          \"errorMessage\": {
+                            \"minItems\": \"version tag must have at least 2 elements\"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      },
+      \"required\": [
+        \"kind\",
+        \"tags\"
+      ]
+    }
+  ],
+  \"$id\": \"https://nostrability.github.io/schemata/note/kind/31.json\"
+}"},
+        {"kind32Schema", "{
+  \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+  \"title\": \"kind32\",
+  \"description\": \"NKBIP-03 Hardcopy reference (citation)\",
+  \"allOf\": [
+    {
+      \"allOf\": [
+        {
+          \"$schema\": \"http://json-schema.org/draft-07/schema\",
+          \"type\": \"object\",
+          \"properties\": {
+            \"content\": {
+              \"type\": \"string\",
+              \"errorMessage\": \"content must be a string\",
+              \"description\": \"The content of the note\"
+            },
+            \"created_at\": {
+              \"type\": \"integer\",
+              \"errorMessage\": \"created_at must be a timestamp expressed in seconds (not milliseconds)\",
+              \"description\": \"The timestamp of the note creation\"
+            },
+            \"id\": {
+              \"allOf\": [
+                {
+                  \"allOf\": [
+                    {
+                      \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                      \"type\": \"string\",
+                      \"pattern\": \"^[a-f0-9]{64}$\"
+                    }
+                  ]
+                }
+              ],
+              \"errorMessage\": \"id must be a valid hash\",
+              \"description\": \"The id is a hash derived as specified in NIP-01\"
+            },
+            \"kind\": {
+              \"type\": \"integer\"
+            },
+            \"pubkey\": {
+              \"allOf\": [
+                {
+                  \"allOf\": [
+                    {
+                      \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                      \"type\": \"string\",
+                      \"pattern\": \"^[a-f0-9]{64}$\"
+                    }
+                  ]
+                }
+              ],
+              \"errorMessage\": \"pubkey must be a secp256k1 public key\",
+              \"description\": \"The public key of the note's author\"
+            },
+            \"sig\": {
+              \"type\": \"string\",
+              \"pattern\": \"^[a-f0-9]{128}$\",
+              \"errorMessage\": \"sig must be 128 lowercase hex characters (64 bytes)\",
+              \"description\": \"The cryptographic signature of the note\"
+            },
+            \"tags\": {
+              \"type\": \"array\",
+              \"errorMessage\": \"tags must be an array of valid tag tuples\",
+              \"description\": \"The tags of the note\",
+              \"items\": {
+                \"allOf\": [
+                  {
+                    \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                    \"type\": \"array\",
+                    \"items\": {
+                      \"type\": \"string\"
+                    },
+                    \"uniqueItems\": false
+                  }
+                ]
+              }
+            }
+          },
+          \"required\": [
+            \"content\",
+            \"created_at\",
+            \"id\",
+            \"kind\",
+            \"pubkey\",
+            \"sig\",
+            \"tags\"
+          ],
+          \"additionalProperties\": false
+        }
+      ]
+    },
+    {
+      \"type\": \"object\",
+      \"properties\": {
+        \"kind\": {
+          \"const\": 32,
+          \"errorMessage\": \"kind must equal 32\"
+        },
+        \"tags\": {
+          \"type\": \"array\",
+          \"items\": {
+            \"allOf\": [
+              {
+                \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                \"type\": \"array\",
+                \"items\": {
+                  \"type\": \"string\"
+                },
+                \"uniqueItems\": false
+              }
+            ]
+          },
+          \"minItems\": 1,
+          \"allOf\": [
+            {
+              \"contains\": {
+                \"allOf\": [
+                  {
+                    \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                    \"allOf\": [
+                      {
+                        \"allOf\": [
+                          {
+                            \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                            \"type\": \"array\",
+                            \"items\": {
+                              \"type\": \"string\"
+                            },
+                            \"uniqueItems\": false
+                          }
+                        ]
+                      },
+                      {
+                        \"type\": \"array\",
+                        \"minItems\": 2,
+                        \"maxItems\": 2,
+                        \"items\": [
+                          {
+                            \"const\": \"accessed_on\"
+                          },
+                          {
+                            \"type\": \"string\",
+                            \"pattern\": \"^\\\\d{4}-\\\\d{2}-\\\\d{2}(T\\\\d{2}:\\\\d{2}(:\\\\d{2})?(\\\\.\\\\d+)?(Z|[+-]\\\\d{2}:\\\\d{2})?)?$\",
+                            \"description\": \"Date-time in ISO 8601 format\"
+                          }
+                        ],
+                        \"additionalItems\": false,
+                        \"errorMessage\": {
+                          \"minItems\": \"accessed_on tag must have at least 2 elements\"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              \"errorMessage\": {
+                \"contains\": \"tags must include an accessed_on tag\"
+              }
+            },
+            {
+              \"contains\": {
+                \"allOf\": [
+                  {
+                    \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                    \"allOf\": [
+                      {
+                        \"allOf\": [
+                          {
+                            \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                            \"type\": \"array\",
+                            \"items\": {
+                              \"type\": \"string\"
+                            },
+                            \"uniqueItems\": false
+                          }
+                        ]
+                      },
+                      {
+                        \"type\": \"array\",
+                        \"minItems\": 2,
+                        \"items\": [
+                          {
+                            \"const\": \"title\"
+                          },
+                          {
+                            \"type\": \"string\"
+                          }
+                        ],
+                        \"additionalItems\": true
+                      }
+                    ]
+                  }
+                ]
+              },
+              \"errorMessage\": {
+                \"contains\": \"tags must include a title tag for the citation\"
+              }
+            },
+            {
+              \"contains\": {
+                \"allOf\": [
+                  {
+                    \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                    \"allOf\": [
+                      {
+                        \"allOf\": [
+                          {
+                            \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                            \"type\": \"array\",
+                            \"items\": {
+                              \"type\": \"string\"
+                            },
+                            \"uniqueItems\": false
+                          }
+                        ]
+                      },
+                      {
+                        \"type\": \"array\",
+                        \"minItems\": 2,
+                        \"items\": [
+                          {
+                            \"const\": \"author\"
+                          },
+                          {
+                            \"type\": \"string\",
+                            \"minLength\": 1,
+                            \"description\": \"Author name for the citation\"
+                          }
+                        ],
+                        \"additionalItems\": {
+                          \"type\": \"string\",
+                          \"minLength\": 1
+                        },
+                        \"errorMessage\": {
+                          \"minItems\": \"author tag must have at least 2 elements\"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              \"errorMessage\": {
+                \"contains\": \"tags must include an author tag\"
+              }
+            },
+            {
+              \"if\": {
+                \"contains\": {
+                  \"type\": \"array\",
+                  \"items\": [
+                    {
+                      \"const\": \"page_range\"
+                    }
+                  ]
+                }
+              },
+              \"then\": {
+                \"contains\": {
+                  \"allOf\": [
+                    {
+                      \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                      \"allOf\": [
+                        {
+                          \"allOf\": [
+                            {
+                              \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                              \"type\": \"array\",
+                              \"items\": {
+                                \"type\": \"string\"
+                              },
+                              \"uniqueItems\": false
+                            }
+                          ]
+                        },
+                        {
+                          \"type\": \"array\",
+                          \"minItems\": 2,
+                          \"maxItems\": 2,
+                          \"items\": [
+                            {
+                              \"const\": \"page_range\"
+                            },
+                            {
+                              \"type\": \"string\",
+                              \"minLength\": 1,
+                              \"description\": \"Pages the citation is found on\"
+                            }
+                          ],
+                          \"additionalItems\": false,
+                          \"errorMessage\": {
+                            \"minItems\": \"page_range tag must have at least 2 elements\"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              \"if\": {
+                \"contains\": {
+                  \"type\": \"array\",
+                  \"items\": [
+                    {
+                      \"const\": \"chapter_title\"
+                    }
+                  ]
+                }
+              },
+              \"then\": {
+                \"contains\": {
+                  \"allOf\": [
+                    {
+                      \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                      \"allOf\": [
+                        {
+                          \"allOf\": [
+                            {
+                              \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                              \"type\": \"array\",
+                              \"items\": {
+                                \"type\": \"string\"
+                              },
+                              \"uniqueItems\": false
+                            }
+                          ]
+                        },
+                        {
+                          \"type\": \"array\",
+                          \"minItems\": 2,
+                          \"maxItems\": 2,
+                          \"items\": [
+                            {
+                              \"const\": \"chapter_title\"
+                            },
+                            {
+                              \"type\": \"string\",
+                              \"minLength\": 1,
+                              \"description\": \"Chapter or section the citation is found in\"
+                            }
+                          ],
+                          \"additionalItems\": false,
+                          \"errorMessage\": {
+                            \"minItems\": \"chapter_title tag must have at least 2 elements\"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              \"if\": {
+                \"contains\": {
+                  \"type\": \"array\",
+                  \"items\": [
+                    {
+                      \"const\": \"editor\"
+                    }
+                  ]
+                }
+              },
+              \"then\": {
+                \"contains\": {
+                  \"allOf\": [
+                    {
+                      \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                      \"allOf\": [
+                        {
+                          \"allOf\": [
+                            {
+                              \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                              \"type\": \"array\",
+                              \"items\": {
+                                \"type\": \"string\"
+                              },
+                              \"uniqueItems\": false
+                            }
+                          ]
+                        },
+                        {
+                          \"type\": \"array\",
+                          \"minItems\": 2,
+                          \"maxItems\": 2,
+                          \"items\": [
+                            {
+                              \"const\": \"editor\"
+                            },
+                            {
+                              \"type\": \"string\",
+                              \"minLength\": 1,
+                              \"description\": \"Editor of the publication\"
+                            }
+                          ],
+                          \"additionalItems\": false,
+                          \"errorMessage\": {
+                            \"minItems\": \"editor tag must have at least 2 elements\"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              \"if\": {
+                \"contains\": {
+                  \"type\": \"array\",
+                  \"items\": [
+                    {
+                      \"const\": \"doi\"
+                    }
+                  ]
+                }
+              },
+              \"then\": {
+                \"contains\": {
+                  \"allOf\": [
+                    {
+                      \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                      \"allOf\": [
+                        {
+                          \"allOf\": [
+                            {
+                              \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                              \"type\": \"array\",
+                              \"items\": {
+                                \"type\": \"string\"
+                              },
+                              \"uniqueItems\": false
+                            }
+                          ]
+                        },
+                        {
+                          \"type\": \"array\",
+                          \"minItems\": 2,
+                          \"maxItems\": 2,
+                          \"items\": [
+                            {
+                              \"const\": \"doi\"
+                            },
+                            {
+                              \"type\": \"string\",
+                              \"minLength\": 1,
+                              \"pattern\": \"^10\\\\.\\\\d{4,9}/.+$\",
+                              \"description\": \"DOI number for the publication\"
+                            }
+                          ],
+                          \"additionalItems\": false,
+                          \"errorMessage\": {
+                            \"minItems\": \"doi tag must have at least 2 elements\"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              \"if\": {
+                \"contains\": {
+                  \"type\": \"array\",
+                  \"items\": [
+                    {
+                      \"const\": \"published_in\"
+                    }
+                  ]
+                }
+              },
+              \"then\": {
+                \"contains\": {
+                  \"allOf\": [
+                    {
+                      \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                      \"allOf\": [
+                        {
+                          \"allOf\": [
+                            {
+                              \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                              \"type\": \"array\",
+                              \"items\": {
+                                \"type\": \"string\"
+                              },
+                              \"uniqueItems\": false
+                            }
+                          ]
+                        },
+                        {
+                          \"type\": \"array\",
+                          \"minItems\": 2,
+                          \"maxItems\": 3,
+                          \"items\": [
+                            {
+                              \"const\": \"published_in\"
+                            },
+                            {
+                              \"type\": \"string\",
+                              \"minLength\": 1,
+                              \"description\": \"Journal name\"
+                            },
+                            {
+                              \"type\": \"string\",
+                              \"description\": \"Volume number\"
+                            }
+                          ],
+                          \"additionalItems\": false,
+                          \"errorMessage\": {
+                            \"minItems\": \"published_in tag must have at least 2 elements\"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              \"if\": {
+                \"contains\": {
+                  \"type\": \"array\",
+                  \"items\": [
+                    {
+                      \"const\": \"version\"
+                    }
+                  ]
+                }
+              },
+              \"then\": {
+                \"contains\": {
+                  \"allOf\": [
+                    {
+                      \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                      \"allOf\": [
+                        {
+                          \"allOf\": [
+                            {
+                              \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                              \"type\": \"array\",
+                              \"items\": {
+                                \"type\": \"string\"
+                              },
+                              \"uniqueItems\": false
+                            }
+                          ]
+                        },
+                        {
+                          \"type\": \"array\",
+                          \"minItems\": 2,
+                          \"maxItems\": 2,
+                          \"items\": [
+                            {
+                              \"const\": \"version\"
+                            },
+                            {
+                              \"type\": \"string\",
+                              \"minLength\": 1,
+                              \"description\": \"Version or edition of the publication or model\"
+                            }
+                          ],
+                          \"additionalItems\": false,
+                          \"errorMessage\": {
+                            \"minItems\": \"version tag must have at least 2 elements\"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      },
+      \"required\": [
+        \"kind\",
+        \"tags\"
+      ]
+    }
+  ],
+  \"$id\": \"https://nostrability.github.io/schemata/note/kind/32.json\"
+}"},
+        {"kind33Schema", "{
+  \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+  \"title\": \"kind33\",
+  \"description\": \"NKBIP-03 Prompt reference (AI citation)\",
+  \"allOf\": [
+    {
+      \"allOf\": [
+        {
+          \"$schema\": \"http://json-schema.org/draft-07/schema\",
+          \"type\": \"object\",
+          \"properties\": {
+            \"content\": {
+              \"type\": \"string\",
+              \"errorMessage\": \"content must be a string\",
+              \"description\": \"The content of the note\"
+            },
+            \"created_at\": {
+              \"type\": \"integer\",
+              \"errorMessage\": \"created_at must be a timestamp expressed in seconds (not milliseconds)\",
+              \"description\": \"The timestamp of the note creation\"
+            },
+            \"id\": {
+              \"allOf\": [
+                {
+                  \"allOf\": [
+                    {
+                      \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                      \"type\": \"string\",
+                      \"pattern\": \"^[a-f0-9]{64}$\"
+                    }
+                  ]
+                }
+              ],
+              \"errorMessage\": \"id must be a valid hash\",
+              \"description\": \"The id is a hash derived as specified in NIP-01\"
+            },
+            \"kind\": {
+              \"type\": \"integer\"
+            },
+            \"pubkey\": {
+              \"allOf\": [
+                {
+                  \"allOf\": [
+                    {
+                      \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                      \"type\": \"string\",
+                      \"pattern\": \"^[a-f0-9]{64}$\"
+                    }
+                  ]
+                }
+              ],
+              \"errorMessage\": \"pubkey must be a secp256k1 public key\",
+              \"description\": \"The public key of the note's author\"
+            },
+            \"sig\": {
+              \"type\": \"string\",
+              \"pattern\": \"^[a-f0-9]{128}$\",
+              \"errorMessage\": \"sig must be 128 lowercase hex characters (64 bytes)\",
+              \"description\": \"The cryptographic signature of the note\"
+            },
+            \"tags\": {
+              \"type\": \"array\",
+              \"errorMessage\": \"tags must be an array of valid tag tuples\",
+              \"description\": \"The tags of the note\",
+              \"items\": {
+                \"allOf\": [
+                  {
+                    \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                    \"type\": \"array\",
+                    \"items\": {
+                      \"type\": \"string\"
+                    },
+                    \"uniqueItems\": false
+                  }
+                ]
+              }
+            }
+          },
+          \"required\": [
+            \"content\",
+            \"created_at\",
+            \"id\",
+            \"kind\",
+            \"pubkey\",
+            \"sig\",
+            \"tags\"
+          ],
+          \"additionalProperties\": false
+        }
+      ]
+    },
+    {
+      \"type\": \"object\",
+      \"properties\": {
+        \"kind\": {
+          \"const\": 33,
+          \"errorMessage\": \"kind must equal 33\"
+        },
+        \"tags\": {
+          \"type\": \"array\",
+          \"items\": {
+            \"allOf\": [
+              {
+                \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                \"type\": \"array\",
+                \"items\": {
+                  \"type\": \"string\"
+                },
+                \"uniqueItems\": false
+              }
+            ]
+          },
+          \"minItems\": 1,
+          \"allOf\": [
+            {
+              \"contains\": {
+                \"allOf\": [
+                  {
+                    \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                    \"allOf\": [
+                      {
+                        \"allOf\": [
+                          {
+                            \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                            \"type\": \"array\",
+                            \"items\": {
+                              \"type\": \"string\"
+                            },
+                            \"uniqueItems\": false
+                          }
+                        ]
+                      },
+                      {
+                        \"type\": \"array\",
+                        \"minItems\": 2,
+                        \"items\": [
+                          {
+                            \"const\": \"llm\"
+                          },
+                          {
+                            \"type\": \"string\",
+                            \"minLength\": 1,
+                            \"description\": \"Language model identifier used for the prompt\"
+                          }
+                        ],
+                        \"additionalItems\": {
+                          \"type\": \"string\"
+                        },
+                        \"errorMessage\": {
+                          \"minItems\": \"llm tag must have at least 2 elements\"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              \"errorMessage\": {
+                \"contains\": \"tags must include an llm tag identifying the language model\"
+              }
+            },
+            {
+              \"contains\": {
+                \"allOf\": [
+                  {
+                    \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                    \"allOf\": [
+                      {
+                        \"allOf\": [
+                          {
+                            \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                            \"type\": \"array\",
+                            \"items\": {
+                              \"type\": \"string\"
+                            },
+                            \"uniqueItems\": false
+                          }
+                        ]
+                      },
+                      {
+                        \"type\": \"array\",
+                        \"minItems\": 2,
+                        \"maxItems\": 2,
+                        \"items\": [
+                          {
+                            \"const\": \"accessed_on\"
+                          },
+                          {
+                            \"type\": \"string\",
+                            \"pattern\": \"^\\\\d{4}-\\\\d{2}-\\\\d{2}(T\\\\d{2}:\\\\d{2}(:\\\\d{2})?(\\\\.\\\\d+)?(Z|[+-]\\\\d{2}:\\\\d{2})?)?$\",
+                            \"description\": \"Date-time in ISO 8601 format\"
+                          }
+                        ],
+                        \"additionalItems\": false,
+                        \"errorMessage\": {
+                          \"minItems\": \"accessed_on tag must have at least 2 elements\"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              \"errorMessage\": {
+                \"contains\": \"tags must include an accessed_on tag\"
+              }
+            },
+            {
+              \"if\": {
+                \"contains\": {
+                  \"type\": \"array\",
+                  \"items\": [
+                    {
+                      \"const\": \"version\"
+                    }
+                  ]
+                }
+              },
+              \"then\": {
+                \"contains\": {
+                  \"allOf\": [
+                    {
+                      \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                      \"allOf\": [
+                        {
+                          \"allOf\": [
+                            {
+                              \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                              \"type\": \"array\",
+                              \"items\": {
+                                \"type\": \"string\"
+                              },
+                              \"uniqueItems\": false
+                            }
+                          ]
+                        },
+                        {
+                          \"type\": \"array\",
+                          \"minItems\": 2,
+                          \"maxItems\": 2,
+                          \"items\": [
+                            {
+                              \"const\": \"version\"
+                            },
+                            {
+                              \"type\": \"string\",
+                              \"minLength\": 1,
+                              \"description\": \"Version or edition of the publication or model\"
+                            }
+                          ],
+                          \"additionalItems\": false,
+                          \"errorMessage\": {
+                            \"minItems\": \"version tag must have at least 2 elements\"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      },
+      \"required\": [
+        \"kind\",
+        \"tags\"
+      ]
+    }
+  ],
+  \"$id\": \"https://nostrability.github.io/schemata/note/kind/33.json\"
+}"},
+        {"accessedonTagSchema", "{
+  \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+  \"allOf\": [
+    {
+      \"allOf\": [
+        {
+          \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+          \"type\": \"array\",
+          \"items\": {
+            \"type\": \"string\"
+          },
+          \"uniqueItems\": false
+        }
+      ]
+    },
+    {
+      \"type\": \"array\",
+      \"minItems\": 2,
+      \"maxItems\": 2,
+      \"items\": [
+        {
+          \"const\": \"accessed_on\"
+        },
+        {
+          \"type\": \"string\",
+          \"pattern\": \"^\\\\d{4}-\\\\d{2}-\\\\d{2}(T\\\\d{2}:\\\\d{2}(:\\\\d{2})?(\\\\.\\\\d+)?(Z|[+-]\\\\d{2}:\\\\d{2})?)?$\",
+          \"description\": \"Date-time in ISO 8601 format\"
+        }
+      ],
+      \"additionalItems\": false,
+      \"errorMessage\": {
+        \"minItems\": \"accessed_on tag must have at least 2 elements\"
+      }
+    }
+  ],
+  \"$id\": \"https://nostrability.github.io/schemata/tag/accessed_on.json\"
+}"},
+        {"authorTagSchema", "{
+  \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+  \"allOf\": [
+    {
+      \"allOf\": [
+        {
+          \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+          \"type\": \"array\",
+          \"items\": {
+            \"type\": \"string\"
+          },
+          \"uniqueItems\": false
+        }
+      ]
+    },
+    {
+      \"type\": \"array\",
+      \"minItems\": 2,
+      \"items\": [
+        {
+          \"const\": \"author\"
+        },
+        {
+          \"type\": \"string\",
+          \"minLength\": 1,
+          \"description\": \"Author name for the citation\"
+        }
+      ],
+      \"additionalItems\": {
+        \"type\": \"string\",
+        \"minLength\": 1
+      },
+      \"errorMessage\": {
+        \"minItems\": \"author tag must have at least 2 elements\"
+      }
+    }
+  ],
+  \"$id\": \"https://nostrability.github.io/schemata/tag/author.json\"
+}"},
+        {"chaptertitleTagSchema", "{
+  \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+  \"allOf\": [
+    {
+      \"allOf\": [
+        {
+          \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+          \"type\": \"array\",
+          \"items\": {
+            \"type\": \"string\"
+          },
+          \"uniqueItems\": false
+        }
+      ]
+    },
+    {
+      \"type\": \"array\",
+      \"minItems\": 2,
+      \"maxItems\": 2,
+      \"items\": [
+        {
+          \"const\": \"chapter_title\"
+        },
+        {
+          \"type\": \"string\",
+          \"minLength\": 1,
+          \"description\": \"Chapter or section the citation is found in\"
+        }
+      ],
+      \"additionalItems\": false,
+      \"errorMessage\": {
+        \"minItems\": \"chapter_title tag must have at least 2 elements\"
+      }
+    }
+  ],
+  \"$id\": \"https://nostrability.github.io/schemata/tag/chapter_title.json\"
+}"},
+        {"doiTagSchema", "{
+  \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+  \"allOf\": [
+    {
+      \"allOf\": [
+        {
+          \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+          \"type\": \"array\",
+          \"items\": {
+            \"type\": \"string\"
+          },
+          \"uniqueItems\": false
+        }
+      ]
+    },
+    {
+      \"type\": \"array\",
+      \"minItems\": 2,
+      \"maxItems\": 2,
+      \"items\": [
+        {
+          \"const\": \"doi\"
+        },
+        {
+          \"type\": \"string\",
+          \"minLength\": 1,
+          \"pattern\": \"^10\\\\.\\\\d{4,9}/.+$\",
+          \"description\": \"DOI number for the publication\"
+        }
+      ],
+      \"additionalItems\": false,
+      \"errorMessage\": {
+        \"minItems\": \"doi tag must have at least 2 elements\"
+      }
+    }
+  ],
+  \"$id\": \"https://nostrability.github.io/schemata/tag/doi.json\"
+}"},
+        {"editorTagSchema", "{
+  \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+  \"allOf\": [
+    {
+      \"allOf\": [
+        {
+          \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+          \"type\": \"array\",
+          \"items\": {
+            \"type\": \"string\"
+          },
+          \"uniqueItems\": false
+        }
+      ]
+    },
+    {
+      \"type\": \"array\",
+      \"minItems\": 2,
+      \"maxItems\": 2,
+      \"items\": [
+        {
+          \"const\": \"editor\"
+        },
+        {
+          \"type\": \"string\",
+          \"minLength\": 1,
+          \"description\": \"Editor of the publication\"
+        }
+      ],
+      \"additionalItems\": false,
+      \"errorMessage\": {
+        \"minItems\": \"editor tag must have at least 2 elements\"
+      }
+    }
+  ],
+  \"$id\": \"https://nostrability.github.io/schemata/tag/editor.json\"
+}"},
+        {"llmTagSchema", "{
+  \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+  \"allOf\": [
+    {
+      \"allOf\": [
+        {
+          \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+          \"type\": \"array\",
+          \"items\": {
+            \"type\": \"string\"
+          },
+          \"uniqueItems\": false
+        }
+      ]
+    },
+    {
+      \"type\": \"array\",
+      \"minItems\": 2,
+      \"items\": [
+        {
+          \"const\": \"llm\"
+        },
+        {
+          \"type\": \"string\",
+          \"minLength\": 1,
+          \"description\": \"Language model identifier used for the prompt\"
+        }
+      ],
+      \"additionalItems\": {
+        \"type\": \"string\"
+      },
+      \"errorMessage\": {
+        \"minItems\": \"llm tag must have at least 2 elements\"
+      }
+    }
+  ],
+  \"$id\": \"https://nostrability.github.io/schemata/tag/llm.json\"
+}"},
+        {"pagerangeTagSchema", "{
+  \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+  \"allOf\": [
+    {
+      \"allOf\": [
+        {
+          \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+          \"type\": \"array\",
+          \"items\": {
+            \"type\": \"string\"
+          },
+          \"uniqueItems\": false
+        }
+      ]
+    },
+    {
+      \"type\": \"array\",
+      \"minItems\": 2,
+      \"maxItems\": 2,
+      \"items\": [
+        {
+          \"const\": \"page_range\"
+        },
+        {
+          \"type\": \"string\",
+          \"minLength\": 1,
+          \"description\": \"Pages the citation is found on\"
+        }
+      ],
+      \"additionalItems\": false,
+      \"errorMessage\": {
+        \"minItems\": \"page_range tag must have at least 2 elements\"
+      }
+    }
+  ],
+  \"$id\": \"https://nostrability.github.io/schemata/tag/page_range.json\"
+}"},
+        {"publishedbyTagSchema", "{
+  \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+  \"allOf\": [
+    {
+      \"allOf\": [
+        {
+          \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+          \"type\": \"array\",
+          \"items\": {
+            \"type\": \"string\"
+          },
+          \"uniqueItems\": false
+        }
+      ]
+    },
+    {
+      \"type\": \"array\",
+      \"minItems\": 2,
+      \"maxItems\": 2,
+      \"items\": [
+        {
+          \"const\": \"published_by\"
+        },
+        {
+          \"type\": \"string\",
+          \"minLength\": 1,
+          \"description\": \"Publisher of the citation\"
+        }
+      ],
+      \"additionalItems\": false,
+      \"errorMessage\": {
+        \"minItems\": \"published_by tag must have at least 2 elements\"
+      }
+    }
+  ],
+  \"$id\": \"https://nostrability.github.io/schemata/tag/published_by.json\"
+}"},
+        {"publishedinTagSchema", "{
+  \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+  \"allOf\": [
+    {
+      \"allOf\": [
+        {
+          \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+          \"type\": \"array\",
+          \"items\": {
+            \"type\": \"string\"
+          },
+          \"uniqueItems\": false
+        }
+      ]
+    },
+    {
+      \"type\": \"array\",
+      \"minItems\": 2,
+      \"maxItems\": 3,
+      \"items\": [
+        {
+          \"const\": \"published_in\"
+        },
+        {
+          \"type\": \"string\",
+          \"minLength\": 1,
+          \"description\": \"Journal name\"
+        },
+        {
+          \"type\": \"string\",
+          \"description\": \"Volume number\"
+        }
+      ],
+      \"additionalItems\": false,
+      \"errorMessage\": {
+        \"minItems\": \"published_in tag must have at least 2 elements\"
+      }
+    }
+  ],
+  \"$id\": \"https://nostrability.github.io/schemata/tag/published_in.json\"
+}"},
+        {"publishedonTagSchema", "{
+  \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+  \"allOf\": [
+    {
+      \"allOf\": [
+        {
+          \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+          \"type\": \"array\",
+          \"items\": {
+            \"type\": \"string\"
+          },
+          \"uniqueItems\": false
+        }
+      ]
+    },
+    {
+      \"type\": \"array\",
+      \"minItems\": 2,
+      \"maxItems\": 2,
+      \"items\": [
+        {
+          \"const\": \"published_on\"
+        },
+        {
+          \"type\": \"string\",
+          \"pattern\": \"^\\\\d{4}-\\\\d{2}-\\\\d{2}(T\\\\d{2}:\\\\d{2}(:\\\\d{2})?(\\\\.\\\\d+)?(Z|[+-]\\\\d{2}:\\\\d{2})?)?$\",
+          \"description\": \"Date-time in ISO 8601 format\"
+        }
+      ],
+      \"additionalItems\": false,
+      \"errorMessage\": {
+        \"minItems\": \"published_on tag must have at least 2 elements\"
+      }
+    }
+  ],
+  \"$id\": \"https://nostrability.github.io/schemata/tag/published_on.json\"
+}"},
+        {"versionTagSchema", "{
+  \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+  \"allOf\": [
+    {
+      \"allOf\": [
+        {
+          \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+          \"type\": \"array\",
+          \"items\": {
+            \"type\": \"string\"
+          },
+          \"uniqueItems\": false
+        }
+      ]
+    },
+    {
+      \"type\": \"array\",
+      \"minItems\": 2,
+      \"maxItems\": 2,
+      \"items\": [
+        {
+          \"const\": \"version\"
+        },
+        {
+          \"type\": \"string\",
+          \"minLength\": 1,
+          \"description\": \"Version or edition of the publication or model\"
+        }
+      ],
+      \"additionalItems\": false,
+      \"errorMessage\": {
+        \"minItems\": \"version tag must have at least 2 elements\"
+      }
+    }
+  ],
+  \"$id\": \"https://nostrability.github.io/schemata/tag/version.json\"
+}"},
         {"kind10051Schema", "{
   \"$schema\": \"http://json-schema.org/draft-07/schema#\",
   \"title\": \"kind10051\",
@@ -39426,7 +46878,10 @@ inline const std::unordered_map<std::string, std::string>& raw_schemas() {
               }
             ]
           },
-          \"minItems\": 6,
+          \"minItems\": 7,
+          \"errorMessage\": {
+            \"minItems\": \"tags must include at least 7 required MIP-00 tags\"
+          },
           \"allOf\": [
             {
               \"contains\": {
@@ -39575,6 +47030,62 @@ inline const std::unordered_map<std::string, std::string>& raw_schemas() {
               },
               \"errorMessage\": {
                 \"contains\": \"tags must include an mls_extensions tag\"
+              }
+            },
+            {
+              \"contains\": {
+                \"allOf\": [
+                  {
+                    \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                    \"title\": \"MLS Proposals\",
+                    \"allOf\": [
+                      {
+                        \"allOf\": [
+                          {
+                            \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+                            \"type\": \"array\",
+                            \"items\": {
+                              \"type\": \"string\"
+                            },
+                            \"uniqueItems\": false
+                          }
+                        ]
+                      },
+                      {
+                        \"type\": \"array\",
+                        \"minItems\": 2,
+                        \"uniqueItems\": true,
+                        \"items\": [
+                          {
+                            \"const\": \"mls_proposals\"
+                          },
+                          {
+                            \"type\": \"string\",
+                            \"pattern\": \"^0x[0-9a-f]{4}$\",
+                            \"description\": \"MLS proposal type identifier\"
+                          }
+                        ],
+                        \"additionalItems\": {
+                          \"type\": \"string\",
+                          \"pattern\": \"^0x[0-9a-f]{4}$\"
+                        },
+                        \"allOf\": [
+                          {
+                            \"contains\": {
+                              \"const\": \"0x000a\"
+                            },
+                            \"errorMessage\": {
+                              \"contains\": \"mls_proposals must include 0x000a (self_remove)\"
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              \"errorMessage\": {
+                \"contains\": \"tags must include an mls_proposals tag\"
               }
             },
             {
@@ -39847,6 +47358,54 @@ inline const std::unordered_map<std::string, std::string>& raw_schemas() {
     }
   ],
   \"$id\": \"https://nostrability.github.io/schemata/tag/mls_extensions.json\"
+}"},
+        {"mlsproposalsTagSchema", "{
+  \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+  \"title\": \"MLS Proposals\",
+  \"allOf\": [
+    {
+      \"allOf\": [
+        {
+          \"$schema\": \"http://json-schema.org/draft-07/schema#\",
+          \"type\": \"array\",
+          \"items\": {
+            \"type\": \"string\"
+          },
+          \"uniqueItems\": false
+        }
+      ]
+    },
+    {
+      \"type\": \"array\",
+      \"minItems\": 2,
+      \"uniqueItems\": true,
+      \"items\": [
+        {
+          \"const\": \"mls_proposals\"
+        },
+        {
+          \"type\": \"string\",
+          \"pattern\": \"^0x[0-9a-f]{4}$\",
+          \"description\": \"MLS proposal type identifier\"
+        }
+      ],
+      \"additionalItems\": {
+        \"type\": \"string\",
+        \"pattern\": \"^0x[0-9a-f]{4}$\"
+      },
+      \"allOf\": [
+        {
+          \"contains\": {
+            \"const\": \"0x000a\"
+          },
+          \"errorMessage\": {
+            \"contains\": \"mls_proposals must include 0x000a (self_remove)\"
+          }
+        }
+      ]
+    }
+  ],
+  \"$id\": \"https://nostrability.github.io/schemata/tag/mls_proposals.json\"
 }"},
         {"mlsprotocolversionTagSchema", "{
   \"$schema\": \"http://json-schema.org/draft-07/schema#\",
@@ -41022,7 +48581,7 @@ inline const std::unordered_map<std::string, std::string>& raw_schemas() {
         {
           \"type\": \"array\",
           \"minItems\": 2,
-          \"maxItems\": 3,
+          \"maxItems\": 2,
           \"items\": [
             {
               \"const\": \"k\"
@@ -41030,17 +48589,14 @@ inline const std::unordered_map<std::string, std::string>& raw_schemas() {
             {
               \"type\": \"string\",
               \"minLength\": 1,
-              \"pattern\": \"^[A-Za-z0-9][A-Za-z0-9._+-]*(?::[A-Za-z0-9][A-Za-z0-9._+-]*)*$\",
-              \"description\": \"Type identifier for the external resource\"
-            },
-            {
-              \"type\": \"string\",
-              \"minLength\": 1,
-              \"description\": \"Optional subtype or hint for the external resource\"
+              \"pattern\": \"^(#|[A-Za-z0-9][A-Za-z0-9._+-]*(?::[A-Za-z0-9][A-Za-z0-9._+-]*)*)$\",
+              \"description\": \"Type identifier for the external resource (e.g. isbn, geo, podcast:guid,\"
             }
           ],
+          \"additionalItems\": false,
           \"errorMessage\": {
-            \"minItems\": \"k tag must be ['k', <type>, ...]\"
+            \"minItems\": \"k tag must be ['k', <type>]\",
+            \"maxItems\": \"k tag must be exactly ['k', <type>]\"
           }
         }
       ]
